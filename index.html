@@ -9,8 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Plus+Jakarta+Sans:wght@300;400;600&display=swap" rel="stylesheet">
-  <!-- Cloudinary Widget -->
+  <!-- Cloudinary Upload Widget & Media Library SDK -->
   <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
+  <script src="https://media-library.cloudinary.com/global/all.js" type="text/javascript"></script>
 
   <style>
     body {
@@ -39,7 +40,7 @@
       <span class="text-2xl">✨</span>
       <span class="text-xs uppercase tracking-widest text-rose-200 font-semibold">Nişan Hatırası</span>
     </div>
-    <!-- Şifreli Giriş İkonu -->
+    <!-- Şifreli Yönetici Giriş Butonu -->
     <button onclick="openAdminModal()" title="Sadece Çift Girişi" class="p-2.5 bg-white/20 hover:bg-white/30 text-white rounded-full backdrop-blur-md transition-all duration-300 border border-white/30 shadow-lg active:scale-90">
       🔒
     </button>
@@ -81,92 +82,4 @@
       </button>
 
       <!-- Yükleme Başarılı Mesajı -->
-      <div id="status_msg" class="hidden mt-4 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-700 text-xs font-semibold">
-        🎉 Harika! Yüklemeniz başarıyla tamamlandı. Teşekkür ederiz!
-      </div>
-    </div>
-
-    <!-- Bilgilendirme -->
-    <p class="text-[11px] text-slate-400 italic">
-      *Yüklemeler doğrudan çiftimizin özel dijital arşivine iletilmektedir.
-    </p>
-  </main>
-
-  <!-- Alt Bilgi / Footer -->
-  <footer class="relative z-10 text-center text-xs text-rose-100/70 py-4 font-light">
-    Sevgiyle Paylaşın • Sinem & Harun ✨
-  </footer>
-
-  <!-- Yönetici Giriş Modalı -->
-  <div id="admin_modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md hidden flex items-center justify-center p-4 transition-all duration-300">
-    <div class="glass-card bg-white rounded-3xl p-7 w-full max-w-xs text-center space-y-5 shadow-2xl border border-white">
-      <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-xl shadow-inner">
-        🔐
-      </div>
-      <div>
-        <h3 class="font-serif-custom text-2xl font-bold text-slate-800">Çift Özel Paneli</h3>
-        <p class="text-xs text-slate-500 mt-1">Anı albümüne erişmek için şifrenizi girin.</p>
-      </div>
-      
-      <input type="password" id="admin_pass" placeholder="Yönetici Şifresi" class="w-full border border-rose-200 focus:border-rose-500 focus:ring-2 focus:ring-rose-200 outline-none p-3 rounded-xl text-center text-sm font-semibold tracking-widest bg-slate-50/50">
-      
-      <div class="flex space-x-2 pt-1">
-        <button onclick="closeAdminModal()" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-600 py-2.5 rounded-xl text-xs font-bold transition">İptal</button>
-        <button onclick="checkPass()" class="w-1/2 bg-rose-600 hover:bg-rose-700 text-white py-2.5 rounded-xl text-xs font-bold shadow-md shadow-rose-600/30 transition">Giriş</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // =========================================================
-    // KENDİ CLOUDINARY BİLGİLERİNİZİ BURAYA YAZIN
-    // =========================================================
-    const CLOUD_NAME = "qlxdd0ki"; 
-    const UPLOAD_PRESET = "SİNEM_HARUN"; 
-    const YONETICI_SIFRESI = "171026"; 
-
-    // Tek Buton Yükleme Sistemi (Tek Seçenekli Yapı)
-    var myWidget = cloudinary.createUploadWidget({
-      cloudName: CLOUD_NAME, 
-      uploadPreset: UPLOAD_PRESET,
-      sources: ["local"], // Sadece doğrudan dosya/galeri seçimi
-      multiple: true,
-      maxFiles: 20,
-      clientAllowedFormats: ["image", "video"],
-      showAdvancedOptions: false,
-      singleUploadAutoClose: false
-    }, (error, result) => { 
-      if (!error && result && result.event === "success") { 
-        document.getElementById("status_msg").classList.remove("hidden");
-        setTimeout(() => {
-          document.getElementById("status_msg").classList.add("hidden");
-        }, 6000);
-      }
-    });
-
-    document.getElementById("upload_widget").addEventListener("click", function(){
-      myWidget.open();
-    }, false);
-
-    // Yönetici Modal Fonksiyonları
-    function openAdminModal() {
-      document.getElementById("admin_modal").classList.remove("hidden");
-      document.getElementById("admin_pass").focus();
-    }
-    function closeAdminModal() {
-      document.getElementById("admin_modal").classList.add("hidden");
-      document.getElementById("admin_pass").value = "";
-    }
-    function checkPass() {
-  const pass = document.getElementById("admin_pass").value;
-  if(pass === YONETICI_SIFRESI) {
-    alert("Giriş Başarılı! Fotoğraf albümünüze yönlendiriliyorsunuz.");
-    // Doğrudan Media Library (Medya Kütüphanesi) sayfasına yönlendirir
-    window.location.href = "https://console.cloudinary.com/console/media_library/folders/home";
-  } else {
-    alert("Hatalı Şifre!");
-  }
-}
-  </script>
-</body>
-</html>
+      <div id="
