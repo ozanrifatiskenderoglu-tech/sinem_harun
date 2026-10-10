@@ -20,7 +20,7 @@
       font-family: 'Cormorant Garamond', serif;
     }
     .glass-card {
-      background: rgba(255, 255, 255, 0.85);
+      background: rgba(255, 255, 255, 0.88);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.6);
@@ -39,6 +39,7 @@
       <span class="text-2xl">✨</span>
       <span class="text-xs uppercase tracking-widest text-rose-200 font-semibold">Nişan Hatırası</span>
     </div>
+    <!-- Şifreli Giriş İkonu -->
     <button onclick="openAdminModal()" title="Sadece Çift Girişi" class="p-2.5 bg-white/20 hover:bg-white/30 text-white rounded-full backdrop-blur-md transition-all duration-300 border border-white/30 shadow-lg active:scale-90">
       🔒
     </button>
@@ -81,7 +82,7 @@
 
       <!-- Yükleme Başarılı Mesajı -->
       <div id="status_msg" class="hidden mt-4 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-700 text-xs font-semibold">
-        🎉 Harika! Fotoğrafınız başarıyla albüme eklendi. Teşekkür ederiz!
+        🎉 Harika! Yüklemeniz başarıyla tamamlandı. Teşekkür ederiz!
       </div>
     </div>
 
@@ -120,32 +121,20 @@
     // =========================================================
     // KENDİ CLOUDINARY BİLGİLERİNİZİ BURAYA YAZIN
     // =========================================================
-    const CLOUD_NAME = "qlxdd0ki"; 
-    const UPLOAD_PRESET = "SİNEM_HARUN"; 
-    const YONETICI_SIFRESI = "1710"; 
+    const CLOUD_NAME = "KENDI_CLOUD_NAME_YAZIN"; 
+    const UPLOAD_PRESET = "KENDI_PRESET_ADI_YAZIN"; 
+    const YONETICI_SIFRESI = "1234"; 
 
-    // Cloudinary Widget - Sadece yerel galeri ve kamera açık olacak şekilde sadeleştirildi
+    // Tek Buton Yükleme Sistemi (Tek Seçenekli Yapı)
     var myWidget = cloudinary.createUploadWidget({
       cloudName: CLOUD_NAME, 
       uploadPreset: UPLOAD_PRESET,
-      maxFiles: 15,
-      clientAllowedFormats: ["image", "video"],
-      sources: ["local", "camera"], // Sadece telefon kamerası ve dosya seçimi aktif
+      sources: ["local"], // Sadece doğrudan dosya/galeri seçimi
       multiple: true,
-      text: {
-        tr: {
-          or: "Veya",
-          back: "Geri",
-          advanced: {
-            no_results: "Sonuç bulunamadı"
-          },
-          local: {
-            browse: "Dosya Seç",
-            dd_title_single: "Fotoğrafı veya videoyu buraya sürükleyin",
-            dd_title_multi: "Fotoğrafları ve videoları buraya sürükleyin"
-          }
-        }
-      }
+      maxFiles: 20,
+      clientAllowedFormats: ["image", "video"],
+      showAdvancedOptions: false,
+      singleUploadAutoClose: false
     }, (error, result) => { 
       if (!error && result && result.event === "success") { 
         document.getElementById("status_msg").classList.remove("hidden");
