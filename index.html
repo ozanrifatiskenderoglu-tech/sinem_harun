@@ -82,4 +82,110 @@
       </button>
 
       <!-- Yükleme Başarılı Mesajı -->
-      <div id="
+      <div id="status_msg" class="hidden mt-4 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-700 text-xs font-semibold">
+        🎉 Harika! Yüklemeniz başarıyla tamamlandı. Teşekkür ederiz!
+      </div>
+    </div>
+
+    <!-- Bilgilendirme -->
+    <p class="text-[11px] text-slate-400 italic">
+      *Yüklemeler doğrudan çiftimizin özel dijital arşivine iletilmektedir.
+    </p>
+  </main>
+
+  <!-- Alt Bilgi / Footer -->
+  <footer class="relative z-10 text-center text-xs text-rose-100/70 py-4 font-light">
+    Sevgiyle Paylaşın • Sinem & Harun ✨
+  </footer>
+
+  <!-- Yönetici Giriş Modalı -->
+  <div id="admin_modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md hidden flex items-center justify-center p-4 transition-all duration-300">
+    <div class="glass-card bg-white rounded-3xl p-7 w-full max-w-xs text-center space-y-5 shadow-2xl border border-white">
+      <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-xl shadow-inner">
+        🔐
+      </div>
+      <div>
+        <h3 class="font-serif-custom text-2xl font-bold text-slate-800">Çift Özel Paneli</h3>
+        <p class="text-xs text-slate-500 mt-1">Yönetici şifrenizi girin.</p>
+      </div>
+      
+      <input type="password" id="admin_pass" placeholder="Yönetici Şifresi" class="w-full border border-rose-200 focus:border-rose-500 focus:ring-2 focus:ring-rose-200 outline-none p-3 rounded-xl text-center text-sm font-semibold tracking-widest bg-slate-50/50">
+      
+      <div class="flex space-x-2 pt-1">
+        <button onclick="closeAdminModal()" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-600 py-2.5 rounded-xl text-xs font-bold transition">İptal</button>
+        <button onclick="checkPass()" class="w-1/2 bg-rose-600 hover:bg-rose-700 text-white py-2.5 rounded-xl text-xs font-bold shadow-md shadow-rose-600/30 transition">Giriş</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================
+    // TÜM CLOUDINARY VE SİSTEM BİLGİLERİ (TAM YÜKLENDİ)
+    // =========================================================
+    const CLOUD_NAME = "qlxdd0ki"; 
+    const FOLDER_NAME = "SINEM_HARUN";
+    const YONETICI_SIFRESI = "171026"; 
+    const API_KEY = "695686734442618";
+    const UPLOAD_PRESET = "SINEM_HARUN";
+
+    // 1. Misafir Fotoğraf Yükleme Widget'ı
+    var myWidget = cloudinary.createUploadWidget({
+      cloudName: CLOUD_NAME, 
+      uploadPreset: UPLOAD_PRESET,
+      folder: FOLDER_NAME,
+      sources: ["local"],
+      multiple: true,
+      maxFiles: 20,
+      clientAllowedFormats: ["image", "video"],
+      showAdvancedOptions: false,
+      singleUploadAutoClose: false
+    }, (error, result) => { 
+      if (!error && result && result.event === "success") { 
+        document.getElementById("status_msg").classList.remove("hidden");
+        setTimeout(() => {
+          document.getElementById("status_msg").classList.add("hidden");
+        }, 6000);
+      }
+    });
+
+    document.getElementById("upload_widget").addEventListener("click", function(){
+      myWidget.open();
+    }, false);
+
+    // Yönetici Modal Fonksiyonları
+    function openAdminModal() {
+      document.getElementById("admin_modal").classList.remove("hidden");
+      document.getElementById("admin_pass").focus();
+    }
+    function closeAdminModal() {
+      document.getElementById("admin_modal").classList.add("hidden");
+      document.getElementById("admin_pass").value = "";
+    }
+
+    // Doğru Şifre Girildiğinde Çalışacak Fonksiyon
+    function checkPass() {
+      const pass = document.getElementById("admin_pass").value;
+      if(pass === YONETICI_SIFRESI) {
+        closeAdminModal();
+        
+        // Site İçinde Doğrudan Açılan Yönetici Galeri Penceresi
+        window.cloudinary.openMediaLibrary({
+          cloud_name: CLOUD_NAME,
+          api_key: API_KEY,
+          remove_header: false,
+          max_files: 100,
+          insert_caption: "Seç",
+          default_folder: FOLDER_NAME
+        }, {
+          insertHandler: function(data) {
+            console.log("Seçilen medya verileri:", data);
+          }
+        });
+
+      } else {
+        alert("Hatalı Şifre!");
+      }
+    }
+  </script>
+</body>
+</html>
