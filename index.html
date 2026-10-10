@@ -158,14 +158,15 @@
       document.getElementById("admin_pass").value = "";
     }
     function checkPass() {
-      const pass = document.getElementById("admin_pass").value;
-      if(pass === YONETICI_SIFRESI) {
-        alert("Giriş Başarılı! Tüm yüklenen fotoğrafları görmek için medya panelinize aktarılıyorsunuz.");
-        window.location.href = `https://console.cloudinary.com/console/c-${CLOUD_NAME}/media_library/folders/all`;
-      } else {
-        alert("Hatalı Şifre!");
-      }
-    }
+  const pass = document.getElementById("admin_pass").value;
+  if(pass === YONETICI_SIFRESI) {
+    alert("Giriş Başarılı! Fotoğraf albümünüze yönlendiriliyorsunuz.");
+    // Doğrudan Media Library (Medya Kütüphanesi) sayfasına yönlendirir
+    window.location.href = "https://console.cloudinary.com/console/media_library/folders/home";
+  } else {
+    alert("Hatalı Şifre!");
+  }
+}
   </script>
 </body>
 </html>
