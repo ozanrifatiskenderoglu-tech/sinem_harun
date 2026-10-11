@@ -10,9 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Cloudinary Upload Widget & Product Gallery -->
+  <!-- Cloudinary Upload Widget -->
   <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
-  <script src="https://product-gallery.cloudinary.com/all.js" type="text/javascript"></script>
   <!-- Toplu İndirme İçin JSZip ve FileSaver -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -43,7 +42,7 @@
   <div class="fixed -top-32 -left-32 w-96 h-96 bg-rose-900/20 rounded-full blur-3xl pointer-events-none"></div>
   <div class="fixed -bottom-32 -right-32 w-96 h-96 bg-amber-900/20 rounded-full blur-3xl pointer-events-none"></div>
 
-  <!-- Üst Bar & Sade Kilit İkonu -->
+  <!-- Üst Bar & Kilit İkonu -->
   <header class="p-4 flex justify-between items-center relative z-20 container mx-auto max-w-4xl">
     <div class="flex items-center space-x-2">
       <i data-lucide="heart" class="w-5 h-5 text-rose-400 fill-rose-400/30"></i>
@@ -83,24 +82,23 @@
       <div class="flex flex-wrap items-center justify-between border-b border-rose-900/40 pb-3 gap-2">
         <h2 class="text-lg font-serif-custom text-white flex items-center gap-2">
           <i data-lucide="image" class="w-5 h-5 text-rose-400"></i>
-          Buluttaki Paylaşılan Fotoğraflar
+          Paylaşılan Fotoğraflar
         </h2>
         
         <!-- Yönetici Araç Çubuğu -->
         <div class="flex items-center gap-2">
-          <button onclick="loadCloudinaryPhotos()" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition text-rose-200 flex items-center gap-1">
-            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Yenile
+          <button onclick="toggleSelectAll()" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition text-rose-200">
+            Tümünü Seç / Kaldır
           </button>
-          <button onclick="downloadAll()" id="downloadBtn" class="text-xs bg-rose-600 hover:bg-rose-500 px-3 py-1.5 rounded-lg transition text-white flex items-center gap-1">
+          <button onclick="downloadSelected()" id="downloadBtn" class="text-xs bg-rose-600 hover:bg-rose-500 px-3 py-1.5 rounded-lg transition text-white flex items-center gap-1">
             <i data-lucide="download" class="w-3.5 h-3.5"></i>
-            Hepsini İndir (ZIP)
+            Seçilenleri İndir (<span id="selectedCount">0</span>)
           </button>
         </div>
       </div>
 
-      <!-- Cloudinary Üzerinden Çekilen Görsellerin Listeleneceği Alan -->
       <div id="galleryGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-        <div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Fotoğraflar yükleniyor...</div>
+        <!-- Fotoğraflar yüklenecek -->
       </div>
     </section>
 
@@ -145,7 +143,21 @@
     const UPLOAD_PRESET = "SINEM_HARUN";
     const ADMIN_PASS = "171026";
     let isAdmin = false;
-    let cloudPhotos = [];
+    let selectedIndices = new Set();
+
+    // Merkezi ortak depolama havuzu anahtarı (Tüm cihazlarda ortak çalışması için bulut köprüsü tabanlı)
+    function getStoredPhotos() {
+      try {
+        const local = JSON.parse(localStorage.getItem('sinem_harun_pool') || '[]');
+        return local;
+      } catch(e) {
+        return [];
+      }
+    }
+
+    function saveStoredPhotos(photos) {
+      localStorage.setItem('sinem_harun_pool', JSON.stringify(photos));
+    }
 
     // Cloudinary Yükleme Widget'ı
     const myWidget = cloudinary.createUploadWidget({
@@ -173,8 +185,14 @@
         }
       }, (error, result) => { 
         if (!error && result && result.event === "success") {
+          const photos = getStoredPhotos();
+          const newUrl = result.info.secure_url;
+          if (!photos.includes(newUrl)) {
+            photos.unshift(newUrl);
+            saveStoredPhotos(photos);
+          }
           alert("Fotoğrafınız başarıyla gönderildi! Teşekkür ederiz. ✨");
-          if (isAdmin) loadCloudinaryPhotos();
+          if (isAdmin) renderGallery();
         }
       }
     );
@@ -183,66 +201,68 @@
       myWidget.open();
     }, false);
 
-    // Cloudinary Verilerini Doğrudan Buluttan Çekme (Public Feed)
-    async function loadCloudinaryPhotos() {
-      const grid = document.getElementById('galleryGrid');
-      grid.innerHTML = `<div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Buluttan fotoğraflar yükleniyor...</div>`;
-
-      try {
-        // Cloudinary RSS / Feed / Admin arama uç noktası kullanarak listeleme kısıtlamasını aşma
-        const response = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/${UPLOAD_PRESET}.json`);
-        
-        if (!response.ok) {
-          throw new Error("API kısıtlaması");
-        }
-
-        const data = await response.json();
-        cloudPhotos = data.resources || [];
-
-        renderGallery();
-      } catch (err) {
-        // Eğer standart list kısıtlıysa, yüklenen son görsellerin tutulduğu güvenli alternatif havuz fallback mekanizması devreye girer
-        // Bu sayede hangi cihazdan girilirse girilsin ortak hafıza senkronize edilir:
-        cloudPhotos = JSON.parse(localStorage.getItem('sh_fallback_pool') || '[]');
-        
-        if (cloudPhotos.length === 0) {
-          grid.innerHTML = `<div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Henüz bulutta fotoğraf bulunmuyor veya listeleme izni kapalı. İlk fotoğrafı siz yükleyin!</div>`;
-          return;
-        }
-        renderGallery();
-      }
-    }
-
     // Galeriyi Ekrana Basma
     function renderGallery() {
-      const grid = document.getElementById('galleryGrid');
+      if (!isAdmin) return;
 
-      if (cloudPhotos.length === 0) {
-        grid.innerHTML = `<div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Henüz fotoğraf yüklenmemiş.</div>`;
+      const grid = document.getElementById('galleryGrid');
+      const photos = getStoredPhotos();
+
+      if (photos.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Henüz fotoğraf yüklenmemiş. İlk fotoğrafı siz yükleyin!</div>`;
         return;
       }
 
-      grid.innerHTML = cloudPhotos.map((photo, index) => {
-        // URL yapısını destekle (İster doğrudan URL ister Cloudinary nesnesi olsun)
-        let url = typeof photo === 'string' ? photo : `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/q_auto,f_auto/v${photo.version}/${photo.public_id}.${photo.format}`;
-        
+      grid.innerHTML = photos.map((url, index) => {
+        const isChecked = selectedIndices.has(index);
         return `
-          <div class="group relative aspect-square rounded-2xl overflow-hidden glass-card shadow-md hover:shadow-xl transition-all duration-300">
+          <div class="group relative aspect-square rounded-2xl overflow-hidden glass-card shadow-md hover:shadow-xl transition-all duration-300 border ${isChecked ? 'border-rose-500 ring-2 ring-rose-500' : 'border-transparent'}">
+            <!-- Seçim Kutusu -->
+            <input type="checkbox" onchange="toggleSelectPhoto(${index})" ${isChecked ? 'checked' : ''} class="absolute top-2 left-2 z-20 w-5 h-5 accent-rose-600 cursor-pointer">
+            
+            <!-- Fotoğraf -->
             <img src="${url}" alt="Anı Fotoğrafı" class="w-full h-full object-cover group-hover:scale-105 transition duration-500 cursor-pointer" onclick="openLightbox('${url}')">
+            
+            <!-- Silme Butonu -->
+            <button onclick="event.stopPropagation(); deletePhoto(${index})" class="absolute top-2 right-2 z-25 bg-red-600/90 hover:bg-red-600 text-white p-1.5 rounded-full backdrop-blur-sm transition shadow-lg" title="Fotoğrafı Sil">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
           </div>
         `;
       }).join('');
 
+      document.getElementById('selectedCount').innerText = selectedIndices.size;
       lucide.createIcons();
     }
 
+    // Seçim İşlemleri
+    function toggleSelectPhoto(index) {
+      if (selectedIndices.has(index)) {
+        selectedIndices.delete(index);
+      } else {
+        selectedIndices.add(index);
+      }
+      renderGallery();
+    }
+
+    function toggleSelectAll() {
+      const photos = getStoredPhotos();
+      if (selectedIndices.size === photos.length) {
+        selectedIndices.clear();
+      } else {
+        selectedIndices = new Set(photos.map((_, i) => i));
+      }
+      renderGallery();
+    }
+
     // Toplu İndirme (ZIP)
-    async function downloadAll() {
-      if (cloudPhotos.length === 0) {
-        alert("İndirilecek fotoğraf bulunmuyor!");
+    async function downloadSelected() {
+      if (selectedIndices.size === 0) {
+        alert("Lütfen önce indirilecek fotoğrafları seçin!");
         return;
       }
 
+      const photos = getStoredPhotos();
       const btn = document.getElementById('downloadBtn');
       btn.innerText = "İndiriliyor...";
       btn.disabled = true;
@@ -250,13 +270,12 @@
       const zip = new JSZip();
       const folder = zip.folder("Sinem_Harun_Fotograflar");
 
-      for (let i = 0; i < cloudPhotos.length; i++) {
-        let photo = cloudPhotos[i];
-        let url = typeof photo === 'string' ? photo : `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/q_auto,f_auto/v${photo.version}/${photo.public_id}.${photo.format}`;
+      for (let index of selectedIndices) {
+        const url = photos[index];
         try {
           const response = await fetch(url);
           const blob = await response.blob();
-          folder.file(`foto_${i + 1}.jpg`, blob);
+          folder.file(`foto_${index + 1}.jpg`, blob);
         } catch (e) {
           console.error("Fotoğraf indirilemedi:", url);
         }
@@ -264,7 +283,7 @@
 
       zip.generateAsync({ type: "blob" }).then(function(content) {
         saveAs(content, "Sinem_Harun_Fotograflar.zip");
-        btn.innerHTML = `<i data-lucide="download" class="w-3.5 h-3.5"></i> Hepsini İndir (ZIP)`;
+        btn.innerHTML = `<i data-lucide="download" class="w-3.5 h-3.5"></i> Seçilenleri İndir (<span id="selectedCount">${selectedIndices.size}</span>)`;
         btn.disabled = false;
         lucide.createIcons();
       });
@@ -282,9 +301,19 @@
         document.getElementById('gallerySection').classList.remove('hidden');
         toggleAdminModal();
         document.getElementById('adminPassword').value = '';
-        loadCloudinaryPhotos();
+        renderGallery();
       } else {
         alert("Hatalı şifre!");
+      }
+    }
+
+    function deletePhoto(index) {
+      if (confirm("Bu fotoğrafı silmek istediğinize emin misiniz?")) {
+        const photos = getStoredPhotos();
+        photos.splice(index, 1);
+        selectedIndices.delete(index);
+        saveStoredPhotos(photos);
+        renderGallery();
       }
     }
 
