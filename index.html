@@ -3,11 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sinem & Harun - Fotoğraf Paylaşımı</title>
+  <title>Sinem & Harun - Google Drive Albümü</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <style>
@@ -24,7 +23,7 @@
   <header class="p-4 flex justify-between items-center relative z-20 container mx-auto max-w-4xl">
     <div class="flex items-center space-x-2">
       <i data-lucide="heart" class="w-5 h-5 text-rose-400 fill-rose-400/30"></i>
-      <span class="text-xs uppercase tracking-widest text-rose-200/70 font-light">Anı Albümü</span>
+      <span class="text-xs uppercase tracking-widest text-rose-200/70 font-light">Google Drive Albüm</span>
     </div>
     <button onclick="toggleAdminModal()" class="p-2 text-rose-200/60 hover:text-rose-100 transition rounded-full hover:bg-white/5" title="Yönetici Girişi">
       <i data-lucide="lock" class="w-5 h-5"></i>
@@ -39,13 +38,17 @@
         <p class="text-sm text-rose-200/80 pt-1 font-light">17 Ekim 2026</p>
       </div>
       <p class="text-sm text-rose-100/70 max-w-md mx-auto font-light leading-relaxed">
-        Bu özel günümüzden çektiğiniz tüm güzel anıları ve fotoğrafları bizimle paylaşarak albümümüze katkıda bulunabilirsiniz. ✨
+        Bu özel günümüzden çektiğiniz tüm güzel anıları ve fotoğrafları doğrudan Google Drive albümümüze yükleyebilirsiniz. ✨
       </p>
+      
+      <!-- Dosya Yükleme Inputu -->
       <div class="pt-2">
-        <button id="upload_widget" class="inline-flex items-center space-x-2 bg-gradient-to-r from-rose-600 to-rose-800 hover:from-rose-500 hover:to-rose-700 text-white px-8 py-3.5 rounded-full font-medium shadow-lg hover:shadow-rose-900/40 transition-all cursor-pointer">
+        <label class="inline-flex items-center space-x-2 bg-gradient-to-r from-rose-600 to-rose-800 hover:from-rose-500 hover:to-rose-700 text-white px-8 py-3.5 rounded-full font-medium shadow-lg hover:shadow-rose-900/40 transition-all cursor-pointer">
           <i data-lucide="camera" class="w-5 h-5"></i>
-          <span>Fotoğraf Yükle</span>
-        </button>
+          <span>Fotoğraf Seç ve Yükle</span>
+          <input type="file" id="fileInput" accept="image/*" multiple class="hidden" onchange="uploadToDrive(event)">
+        </label>
+        <p id="uploadStatus" class="text-xs text-rose-200 mt-2"></p>
       </div>
     </div>
 
@@ -54,9 +57,12 @@
       <div class="flex flex-wrap items-center justify-between border-b border-rose-900/40 pb-3 gap-2">
         <h2 class="text-lg font-serif-custom text-white flex items-center gap-2">
           <i data-lucide="image" class="w-5 h-5 text-rose-400"></i>
-          Yönetici Albümü
+          Google Drive Albümü (<span id="photoCount">0</span>)
         </h2>
         <div class="flex items-center gap-2">
+          <button onclick="fetchDrivePhotos()" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition text-rose-200 flex items-center gap-1">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Yenile
+          </button>
           <button onclick="toggleSelectAll()" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition text-rose-200">Tümünü Seç</button>
           <button onclick="downloadSelected()" id="downloadBtn" class="text-xs bg-rose-600 hover:bg-rose-500 px-3 py-1.5 rounded-lg transition text-white flex items-center gap-1">
             <i data-lucide="download" class="w-3.5 h-3.5"></i> İndir (<span id="selectedCount">0</span>)
@@ -72,6 +78,7 @@
     <div class="text-[11px] opacity-80">Created by <a href="https://instagram.com/ori.bilisim" target="_blank" class="font-semibold underline hover:text-white transition">ori.bilisim 🤍</a></div>
   </footer>
 
+  <!-- Yönetici Giriş Modalı -->
   <div id="adminModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm hidden">
     <div class="glass-modal rounded-2xl p-6 w-full max-w-xs space-y-4 shadow-2xl relative border border-white/20">
       <button onclick="toggleAdminModal()" class="absolute top-4 right-4 text-rose-200/60 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -81,6 +88,7 @@
     </div>
   </div>
 
+  <!-- Lightbox Modal -->
   <div id="lightboxModal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex items-center justify-center p-4" onclick="closeLightbox()">
     <button class="absolute top-4 right-4 text-white/80 hover:text-white p-2"><i data-lucide="x" class="w-8 h-8"></i></button>
     <img id="lightboxImg" src="" class="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl" onclick="event.stopPropagation()">
@@ -88,47 +96,77 @@
 
   <script>
     lucide.createIcons();
-    const CLOUD_NAME = "qlxdd0ki", UPLOAD_PRESET = "SINEM_HARUN", ADMIN_PASS = "171026";
-    let isAdmin = false, selectedIndices = new Set();
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx8YycOrlaNFzkpevdjKFvIFqZ03OG9oVmFEBAczBfjMBJRPYYZBS-Tti8UrjV5S4cb1Q/exec";
+    const ADMIN_PASS = "171026";
+    let isAdmin = false, selectedIndices = new Set(), drivePhotos = [];
 
-    // Verileri depolamak için güvenli anahtar
-    function getStoredPhotos() {
-      try { return JSON.parse(localStorage.getItem('sinem_harun_wedding_gallery') || '[]'); } catch(e) { return []; }
-    }
-    function saveStoredPhotos(p) { localStorage.setItem('sinem_harun_wedding_gallery', JSON.stringify(p)); }
+    // Fotoğrafı Google Drive'a Yükleme
+    async function uploadToDrive(event) {
+      const files = event.target.files;
+      if (!files.length) return;
 
-    // Cloudinary Yükleme Widget'ı
-    const myWidget = cloudinary.createUploadWidget({
-      cloudName: CLOUD_NAME, uploadPreset: UPLOAD_PRESET, sources: ['local', 'camera'], multiple: true, maxFiles: 10
-    }, (error, result) => { 
-      if (!error && result && result.event === "success") {
-        let photos = getStoredPhotos();
-        const newUrl = result.info.secure_url;
-        if (!photos.includes(newUrl)) {
-          photos.unshift(newUrl);
-          saveStoredPhotos(photos);
-        }
-        alert("Fotoğrafınız başarıyla gönderildi! Teşekkür ederiz. ✨");
-        if (isAdmin) renderGallery();
+      const status = document.getElementById('uploadStatus');
+      status.innerText = "Fotoğraflar Google Drive'a yükleniyor...";
+
+      for (let file of files) {
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+          const payload = {
+            filename: file.name,
+            mimeType: file.type,
+            file: e.target.result
+          };
+
+          try {
+            await fetch(SCRIPT_URL, {
+              method: "POST",
+              body: JSON.stringify(payload)
+            });
+            status.innerText = "Fotoğraflar başarıyla yüklendi! ✨";
+            if (isAdmin) fetchDrivePhotos();
+          } catch (err) {
+            status.innerText = "Yükleme sırasında hata oluştu.";
+          }
+        };
+        reader.readAsDataURL(file);
       }
-    });
+    }
 
-    document.getElementById("upload_widget").addEventListener("click", () => myWidget.open(), false);
+    // Google Drive'dan Fotoğrafları Çekme
+    async function fetchDrivePhotos() {
+      const grid = document.getElementById('galleryGrid');
+      grid.innerHTML = `<div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Google Drive taranıyor...</div>`;
+
+      try {
+        const response = await fetch(SCRIPT_URL);
+        const data = await response.json();
+        if (data.status === "success") {
+          drivePhotos = data.photos || [];
+          renderGallery();
+        } else {
+          throw new Error();
+        }
+      } catch (err) {
+        grid.innerHTML = `<div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Drive fotoğrafları yüklenirken bir sorun oluştu.</div>`;
+      }
+    }
 
     function renderGallery() {
       if (!isAdmin) return;
-      const grid = document.getElementById('galleryGrid'), photos = getStoredPhotos();
-      if (photos.length === 0) {
-        grid.innerHTML = `<div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Henüz fotoğraf yüklenmemiş. İlk fotoğrafı yükleyin!</div>`;
+      const grid = document.getElementById('galleryGrid');
+      document.getElementById('photoCount').innerText = drivePhotos.length;
+
+      if (drivePhotos.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Google Drive'da henüz fotoğraf bulunmuyor.</div>`;
         return;
       }
-      grid.innerHTML = photos.map((url, i) => {
+
+      grid.innerHTML = drivePhotos.map((photo, i) => {
         const isChecked = selectedIndices.has(i);
         return `
           <div class="group relative aspect-square rounded-2xl overflow-hidden glass-card shadow-md border ${isChecked ? 'border-rose-500 ring-2 ring-rose-500' : 'border-transparent'}">
             <input type="checkbox" onchange="toggleSelectPhoto(${i})" ${isChecked ? 'checked' : ''} class="absolute top-2 left-2 z-20 w-5 h-5 accent-rose-600 cursor-pointer">
-            <img src="${url}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500 cursor-pointer" onclick="openLightbox('${url}')">
-            <button onclick="event.stopPropagation(); deletePhoto(${i})" class="absolute top-2 right-2 z-25 bg-red-600 text-white p-1.5 rounded-full shadow-lg" title="Sil"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+            <img src="${photo.url}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500 cursor-pointer" onclick="openLightbox('${photo.url}')">
           </div>`;
       }).join('');
       document.getElementById('selectedCount').innerText = selectedIndices.size;
@@ -141,24 +179,27 @@
     }
 
     function toggleSelectAll() {
-      const photos = getStoredPhotos();
-      selectedIndices.size === photos.length ? selectedIndices.clear() : (selectedIndices = new Set(photos.map((_, i) => i)));
+      selectedIndices.size === drivePhotos.length ? selectedIndices.clear() : (selectedIndices = new Set(drivePhotos.map((_, i) => i)));
       renderGallery();
     }
 
     async function downloadSelected() {
       if (selectedIndices.size === 0) return alert("Lütfen önce fotoğraf seçin!");
-      const photos = getStoredPhotos(), btn = document.getElementById('downloadBtn');
+      const btn = document.getElementById('downloadBtn');
       btn.innerText = "İndiriliyor..."; btn.disabled = true;
-      const zip = new JSZip(), folder = zip.folder("Sinem_Harun_Fotograflar");
+      const zip = new JSZip(), folder = zip.folder("Sinem_Harun_GoogleDrive_Fotograflar");
+      
       for (let i of selectedIndices) {
+        const photo = drivePhotos[i];
         try {
-          const res = await fetch(photos[i]);
-          folder.file(`foto_${i + 1}.jpg`, await res.blob());
+          const res = await fetch(photo.downloadUrl || photo.url);
+          const blob = await res.blob();
+          folder.file(photo.name || `foto_${i + 1}.jpg`, blob);
         } catch(e) {}
       }
+
       zip.generateAsync({ type: "blob" }).then(content => {
-        saveAs(content, "Sinem_Harun_Fotograflar.zip");
+        saveAs(content, "Sinem_Harun_GoogleDrive_Fotograflar.zip");
         btn.innerHTML = `<i data-lucide="download" class="w-3.5 h-3.5"></i> İndir (<span id="selectedCount">${selectedIndices.size}</span>)`;
         btn.disabled = false;
         lucide.createIcons();
@@ -174,19 +215,9 @@
         document.getElementById('gallerySection').classList.remove('hidden');
         toggleAdminModal();
         document.getElementById('adminPassword').value = '';
-        renderGallery();
+        fetchDrivePhotos(); // Şifre girilince doğrudan Google Drive'dan listeyi çeker!
       } else { 
         alert("Hatalı şifre!"); 
-      }
-    }
-
-    function deletePhoto(i) {
-      if (confirm("Silmek istediğinize emin misiniz?")) {
-        let photos = getStoredPhotos();
-        photos.splice(i, 1); 
-        selectedIndices.delete(i);
-        saveStoredPhotos(photos); 
-        renderGallery();
       }
     }
 
