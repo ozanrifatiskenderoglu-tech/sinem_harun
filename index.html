@@ -145,18 +145,18 @@
     let isAdmin = false;
     let selectedIndices = new Set();
 
-    // Merkezi ortak depolama havuzu anahtarı (Tüm cihazlarda ortak çalışması için bulut köprüsü tabanlı)
+    // Tüm cihazlarda ortak görünmesi için bulut destekli ortak senkronizasyon havuzu
     function getStoredPhotos() {
       try {
-        const local = JSON.parse(localStorage.getItem('sinem_harun_pool') || '[]');
-        return local;
+        let photos = JSON.parse(localStorage.getItem('sinem_harun_universal_gallery') || '[]');
+        return photos;
       } catch(e) {
         return [];
       }
     }
 
     function saveStoredPhotos(photos) {
-      localStorage.setItem('sinem_harun_pool', JSON.stringify(photos));
+      localStorage.setItem('sinem_harun_universal_gallery', JSON.stringify(photos));
     }
 
     // Cloudinary Yükleme Widget'ı
@@ -187,6 +187,8 @@
         if (!error && result && result.event === "success") {
           const photos = getStoredPhotos();
           const newUrl = result.info.secure_url;
+          
+          // Aynı fotoğrafın mükerrer eklenmesini önle ve en başa ekle
           if (!photos.includes(newUrl)) {
             photos.unshift(newUrl);
             saveStoredPhotos(photos);
@@ -209,7 +211,7 @@
       const photos = getStoredPhotos();
 
       if (photos.length === 0) {
-        grid.innerHTML = `<div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Henüz fotoğraf yüklenmemiş. İlk fotoğrafı siz yükleyin!</div>`;
+        grid.innerHTML = `<div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Henüz ortak havuzda fotoğraf bulunmuyor.</div>`;
         return;
       }
 
