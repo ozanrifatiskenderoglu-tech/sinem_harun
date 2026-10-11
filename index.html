@@ -42,15 +42,14 @@
   <div class="fixed -top-32 -left-32 w-96 h-96 bg-rose-900/20 rounded-full blur-3xl pointer-events-none"></div>
   <div class="fixed -bottom-32 -right-32 w-96 h-96 bg-amber-900/20 rounded-full blur-3xl pointer-events-none"></div>
 
-  <!-- Üst Bar & Yönetici Girişi İkonu -->
+  <!-- Üst Bar & Sade Kilit İkonu -->
   <header class="p-4 flex justify-between items-center relative z-20 container mx-auto max-w-4xl">
     <div class="flex items-center space-x-2">
       <i data-lucide="heart" class="w-5 h-5 text-rose-400 fill-rose-400/30"></i>
       <span class="text-xs uppercase tracking-widest text-rose-200/70 font-light">Anı Albümü</span>
     </div>
-    <button id="adminBtn" onclick="toggleAdminModal()" class="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-rose-100 text-xs px-3 py-1.5 rounded-full backdrop-blur-sm transition">
-      <i data-lucide="lock" class="w-4 h-4"></i>
-      <span id="adminStatusText">Yönetici Girişi</span>
+    <button onclick="toggleAdminModal()" class="p-2 text-rose-200/60 hover:text-rose-100 transition rounded-full hover:bg-white/5" title="Yönetici Girişi">
+      <i data-lucide="lock" class="w-5 h-5"></i>
     </button>
   </header>
 
@@ -78,7 +77,7 @@
       </div>
     </div>
 
-    <!-- Kilitli Galeri Alanı (Sadece Şifre Girilince Görünür) -->
+    <!-- Kilitli Galeri Alanı (Şifre Girilince Açılır) -->
     <section id="gallerySection" class="space-y-4 hidden">
       <div class="flex flex-wrap items-center justify-between border-b border-rose-900/40 pb-3 gap-2">
         <h2 class="text-lg font-serif-custom text-white flex items-center gap-2">
@@ -86,7 +85,7 @@
           Paylaşılan Fotoğraflar
         </h2>
         
-        <!-- Yönetici Araç Çubuğu (Toplu İşlemler) -->
+        <!-- Yönetici Araç Çubuğu (Toplu Seçim ve İndirme) -->
         <div class="flex items-center gap-2">
           <button onclick="toggleSelectAll()" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition text-rose-200">
             Tümünü Seç / Kaldır
@@ -102,18 +101,6 @@
         <!-- Fotoğraflar JS ile yüklenecek -->
       </div>
     </section>
-
-    <!-- Şifre Girilmediğinde Görünecek Bilgi Kutusu -->
-    <div id="lockedNotice" class="glass-card rounded-2xl p-8 text-center space-y-3">
-      <i data-lucide="shield-check" class="w-10 h-10 text-rose-400 mx-auto opacity-80"></i>
-      <h3 class="text-md font-serif-custom text-white">Yüklenen Fotoğraflar Gizlidir</h3>
-      <p class="text-xs text-rose-200/60 max-w-sm mx-auto">
-        Misafirler tarafından yüklenen fotoğrafları sadece yönetici şifresine sahip yetkililer görüntüleyebilir.
-      </p>
-      <button onclick="toggleAdminModal()" class="inline-block text-xs text-rose-300 underline hover:text-white pt-1">
-        Yönetici Girişi Yap
-      </button>
-    </div>
 
   </main>
 
@@ -174,4 +161,162 @@
         multiple: true,
         maxFiles: 10,
         styles: {
-          palette
+          palette: {
+            window: "#1a050b",
+            sourceBg: "#150308",
+            windowBorder: "#2b0914",
+            tabIcon: "#f43f5e",
+            inactiveTabIcon: "#9f1239",
+            menuIcons: "#f43f5e",
+            link: "#f43f5e",
+            action: "#e11d48",
+            inProgress: "#f43f5e",
+            complete: "#10b981",
+            error: "#f87171",
+            textDark: "#000000",
+            textLight: "#ffffff"
+          }
+        }
+      }, (error, result) => { 
+        if (!error && result && result.event === "success") {
+          const photos = getStoredPhotos();
+          photos.unshift(result.info.secure_url);
+          saveStoredPhotos(photos);
+          alert("Fotoğrafınız başarıyla gönderildi! Teşekkür ederiz. ✨");
+          if (isAdmin) renderGallery();
+        }
+      }
+    );
+
+    document.getElementById("upload_widget").addEventListener("click", function(){
+      myWidget.open();
+    }, false);
+
+    // Galeriyi Ekrana Basma
+    function renderGallery() {
+      if (!isAdmin) return;
+
+      const grid = document.getElementById('galleryGrid');
+      const photos = getStoredPhotos();
+
+      if (photos.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Henüz fotoğraf yüklenmemiş.</div>`;
+        return;
+      }
+
+      grid.innerHTML = photos.map((url, index) => {
+        const isChecked = selectedIndices.has(index);
+        return `
+          <div class="group relative aspect-square rounded-2xl overflow-hidden glass-card shadow-md hover:shadow-xl transition-all duration-300 border ${isChecked ? 'border-rose-500 ring-2 ring-rose-500' : 'border-transparent'}">
+            <!-- Seçim Kutusu -->
+            <input type="checkbox" onchange="toggleSelectPhoto(${index})" ${isChecked ? 'checked' : ''} class="absolute top-2 left-2 z-20 w-5 h-5 accent-rose-600 cursor-pointer">
+            
+            <!-- Fotoğraf -->
+            <img src="${url}" alt="Anı Fotoğrafı" class="w-full h-full object-cover group-hover:scale-105 transition duration-500 cursor-pointer" onclick="openLightbox('${url}')">
+            
+            <!-- Silme Butonu -->
+            <button onclick="event.stopPropagation(); deletePhoto(${index})" class="absolute top-2 right-2 z-20 bg-red-600/90 hover:bg-red-600 text-white p-1.5 rounded-full backdrop-blur-sm transition shadow-lg" title="Fotoğrafı Sil">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('selectedCount').innerText = selectedIndices.size;
+      lucide.createIcons();
+    }
+
+    // Seçim İşlemleri
+    function toggleSelectPhoto(index) {
+      if (selectedIndices.has(index)) {
+        selectedIndices.delete(index);
+      } else {
+        selectedIndices.add(index);
+      }
+      renderGallery();
+    }
+
+    function toggleSelectAll() {
+      const photos = getStoredPhotos();
+      if (selectedIndices.size === photos.length) {
+        selectedIndices.clear();
+      } else {
+        selectedIndices = new Set(photos.map((_, i) => i));
+      }
+      renderGallery();
+    }
+
+    // Toplu İndirme
+    async function downloadSelected() {
+      if (selectedIndices.size === 0) {
+        alert("Lütfen önce indirilecek fotoğrafları seçin!");
+        return;
+      }
+
+      const photos = getStoredPhotos();
+      const btn = document.getElementById('downloadBtn');
+      btn.innerText = "İndiriliyor...";
+      btn.disabled = true;
+
+      const zip = new JSZip();
+      const folder = zip.folder("Sinem_Harun_Fotograflar");
+
+      for (let index of selectedIndices) {
+        const url = photos[index];
+        try {
+          const response = await fetch(url);
+          const blob = await response.blob();
+          folder.file(`foto_${index + 1}.jpg`, blob);
+        } catch (e) {
+          console.error("Fotoğraf indirilemedi:", url);
+        }
+      }
+
+      zip.generateAsync({ type: "blob" }).then(function(content) {
+        saveAs(content, "Sinem_Harun_Fotograflar.zip");
+        btn.innerHTML = `<i data-lucide="download" class="w-3.5 h-3.5"></i> Seçilenleri İndir (<span id="selectedCount">${selectedIndices.size}</span>)`;
+        btn.disabled = false;
+        lucide.createIcons();
+      });
+    }
+
+    // Yönetici Modu
+    function toggleAdminModal() {
+      document.getElementById('adminModal').classList.toggle('hidden');
+    }
+
+    function verifyAdmin() {
+      const input = document.getElementById('adminPassword').value;
+      if (input === ADMIN_PASS) {
+        isAdmin = true;
+        document.getElementById('gallerySection').classList.remove('hidden');
+        toggleAdminModal();
+        document.getElementById('adminPassword').value = '';
+        renderGallery();
+      } else {
+        alert("Hatalı şifre!");
+      }
+    }
+
+    function deletePhoto(index) {
+      if (confirm("Bu fotoğrafı silmek istediğinize emin misiniz?")) {
+        const photos = getStoredPhotos();
+        photos.splice(index, 1);
+        selectedIndices.delete(index);
+        saveStoredPhotos(photos);
+        renderGallery();
+      }
+    }
+
+    // Lightbox
+    function openLightbox(url) {
+      document.getElementById('lightboxImg').src = url;
+      document.getElementById('lightboxModal').classList.remove('hidden');
+    }
+
+    function closeLightbox() {
+      document.getElementById('lightboxModal').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
