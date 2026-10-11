@@ -27,7 +27,7 @@
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
     .glass-modal {
-      background: rgba(20, 5, 10, 0.85);
+      background: rgba(20, 5, 10, 0.95);
       backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.15);
     }
@@ -67,7 +67,7 @@
 
       <!-- Yükleme Butonu -->
       <div class="pt-2">
-        <button id="upload_widget" class="inline-flex items-center space-x-2 bg-gradient-to-r from-rose-600 to-rose-800 hover:from-rose-500 hover:to-rose-700 text-white px-8 py-3.5 rounded-full font-medium shadow-lg hover:shadow-rose-900/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0">
+        <button id="upload_widget" class="inline-flex items-center space-x-2 bg-gradient-to-r from-rose-600 to-rose-800 hover:from-rose-500 hover:to-rose-700 text-white px-8 py-3.5 rounded-full font-medium shadow-lg hover:shadow-rose-900/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer">
           <i data-lucide="camera" class="w-5 h-5"></i>
           <span>Fotoğraf Yükle</span>
         </button>
@@ -102,8 +102,8 @@
   </footer>
 
   <!-- Yönetici Giriş Modalı -->
-  <div id="adminModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm hidden">
-    <div class="glass-modal rounded-2xl p-6 w-full max-w-xs space-y-4 shadow-2xl relative">
+  <div id="adminModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm hidden">
+    <div class="glass-modal rounded-2xl p-6 w-full max-w-xs space-y-4 shadow-2xl relative border border-white/20">
       <button onclick="toggleAdminModal()" class="absolute top-4 right-4 text-rose-200/60 hover:text-white">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
@@ -123,6 +123,7 @@
 
   <!-- Uygulama JS Mantığı -->
   <script>
+    // İkonları yükle
     lucide.createIcons();
 
     const CLOUD_NAME = "qlxdd0ki";
@@ -194,4 +195,61 @@
       grid.innerHTML = photos.map((url, index) => {
         return `
           <div class="group relative aspect-square rounded-2xl overflow-hidden glass-card cursor-pointer shadow-md hover:shadow-xl transition-all duration-300">
-            <img src="${url}" alt="Anı Fotoğrafı" class
+            <img src="${url}" alt="Anı Fotoğrafı" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" onclick="openLightbox('${url}')">
+            ${isAdmin ? `
+              <button onclick="event.stopPropagation(); deletePhoto(${index})" class="absolute top-2 right-2 bg-red-600/90 hover:bg-red-600 text-white p-2 rounded-full backdrop-blur-sm transition shadow-lg" title="Fotoğrafı Sil">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    // Yönetici Modu Modalı Aç/Kapat
+    function toggleAdminModal() {
+      const modal = document.getElementById('adminModal');
+      modal.classList.toggle('hidden');
+    }
+
+    // Şifre Doğrulama
+    function verifyAdmin() {
+      const input = document.getElementById('adminPassword').value;
+      if (input === ADMIN_PASS) {
+        isAdmin = true;
+        alert("Yönetici girişi başarılı! Fotoğrafları silme butonları aktif edildi.");
+        toggleAdminModal();
+        document.getElementById('adminPassword').value = ''; // Şifreyi temizle
+        renderGallery();
+      } else {
+        alert("Hatalı şifre!");
+      }
+    }
+
+    // Fotoğraf Silme
+    function deletePhoto(index) {
+      if (confirm("Bu fotoğrafı galeriden silmek istediğinize emin misiniz?")) {
+        const photos = getStoredPhotos();
+        photos.splice(index, 1);
+        saveStoredPhotos(photos);
+        renderGallery();
+      }
+    }
+
+    // Lightbox İşlemleri
+    function openLightbox(url) {
+      document.getElementById('lightboxImg').src = url;
+      document.getElementById('lightboxModal').classList.remove('hidden');
+    }
+
+    function closeLightbox() {
+      document.getElementById('lightboxModal').classList.add('hidden');
+    }
+
+    // İlk Çalıştırma
+    renderGallery();
+  </script>
+</body>
+</html>
