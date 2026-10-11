@@ -12,6 +12,9 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- Cloudinary Upload Widget -->
   <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
+  <!-- Toplu İndirme İçin JSZip ve FileSaver -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
   <style>
     body {
@@ -45,8 +48,9 @@
       <i data-lucide="heart" class="w-5 h-5 text-rose-400 fill-rose-400/30"></i>
       <span class="text-xs uppercase tracking-widest text-rose-200/70 font-light">Anı Albümü</span>
     </div>
-    <button onclick="toggleAdminModal()" class="p-2 text-rose-200/60 hover:text-rose-100 transition rounded-full hover:bg-white/5" title="Yönetici Girişi">
-      <i data-lucide="lock" class="w-5 h-5"></i>
+    <button id="adminBtn" onclick="toggleAdminModal()" class="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-rose-100 text-xs px-3 py-1.5 rounded-full backdrop-blur-sm transition">
+      <i data-lucide="lock" class="w-4 h-4"></i>
+      <span id="adminStatusText">Yönetici Girişi</span>
     </button>
   </header>
 
@@ -74,20 +78,43 @@
       </div>
     </div>
 
-    <!-- Fotoğraf Galerisi -->
-    <section class="space-y-4">
-      <div class="flex items-center justify-between border-b border-rose-900/40 pb-3">
+    <!-- Kilitli Galeri Alanı (Sadece Şifre Girilince Görünür) -->
+    <section id="gallerySection" class="space-y-4 hidden">
+      <div class="flex flex-wrap items-center justify-between border-b border-rose-900/40 pb-3 gap-2">
         <h2 class="text-lg font-serif-custom text-white flex items-center gap-2">
           <i data-lucide="image" class="w-5 h-5 text-rose-400"></i>
           Paylaşılan Fotoğraflar
         </h2>
-        <span id="photoCount" class="text-xs text-rose-200/60 bg-white/5 px-3 py-1 rounded-full">0 Fotoğraf</span>
+        
+        <!-- Yönetici Araç Çubuğu (Toplu İşlemler) -->
+        <div class="flex items-center gap-2">
+          <button onclick="toggleSelectAll()" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition text-rose-200">
+            Tümünü Seç / Kaldır
+          </button>
+          <button onclick="downloadSelected()" id="downloadBtn" class="text-xs bg-rose-600 hover:bg-rose-500 px-3 py-1.5 rounded-lg transition text-white flex items-center gap-1">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            Seçilenleri İndir (<span id="selectedCount">0</span>)
+          </button>
+        </div>
       </div>
 
       <div id="galleryGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
         <!-- Fotoğraflar JS ile yüklenecek -->
       </div>
     </section>
+
+    <!-- Şifre Girilmediğinde Görünecek Bilgi Kutusu -->
+    <div id="lockedNotice" class="glass-card rounded-2xl p-8 text-center space-y-3">
+      <i data-lucide="shield-check" class="w-10 h-10 text-rose-400 mx-auto opacity-80"></i>
+      <h3 class="text-md font-serif-custom text-white">Yüklenen Fotoğraflar Gizlidir</h3>
+      <p class="text-xs text-rose-200/60 max-w-sm mx-auto">
+        Misafirler tarafından yüklenen fotoğrafları sadece yönetici şifresine sahip yetkililer görüntüleyebilir.
+      </p>
+      <button onclick="toggleAdminModal()" class="inline-block text-xs text-rose-300 underline hover:text-white pt-1">
+        Yönetici Girişi Yap
+      </button>
+    </div>
+
   </main>
 
   <!-- Alt Bilgi / Footer -->
@@ -123,20 +150,18 @@
 
   <!-- Uygulama JS Mantığı -->
   <script>
-    // İkonları yükle
     lucide.createIcons();
 
     const CLOUD_NAME = "qlxdd0ki";
     const UPLOAD_PRESET = "SINEM_HARUN";
     const ADMIN_PASS = "171026";
     let isAdmin = false;
+    let selectedIndices = new Set();
 
-    // Fotoğrafları Yerel Depodan Al
     function getStoredPhotos() {
       return JSON.parse(localStorage.getItem('sh_photos') || '[]');
     }
 
-    // Fotoğrafları Yerel Depoya Kaydet
     function saveStoredPhotos(photos) {
       localStorage.setItem('sh_photos', JSON.stringify(photos));
     }
@@ -149,107 +174,4 @@
         multiple: true,
         maxFiles: 10,
         styles: {
-          palette: {
-            window: "#1a050b",
-            sourceBg: "#150308",
-            windowBorder: "#2b0914",
-            tabIcon: "#f43f5e",
-            inactiveTabIcon: "#9f1239",
-            menuIcons: "#f43f5e",
-            link: "#f43f5e",
-            action: "#e11d48",
-            inProgress: "#f43f5e",
-            complete: "#10b981",
-            error: "#f87171",
-            textDark: "#000000",
-            textLight: "#ffffff"
-          }
-        }
-      }, (error, result) => { 
-        if (!error && result && result.event === "success") {
-          const photos = getStoredPhotos();
-          photos.unshift(result.info.secure_url);
-          saveStoredPhotos(photos);
-          renderGallery();
-        }
-      }
-    );
-
-    document.getElementById("upload_widget").addEventListener("click", function(){
-      myWidget.open();
-    }, false);
-
-    // Galeriyi Ekrana Basma
-    function renderGallery() {
-      const grid = document.getElementById('galleryGrid');
-      const countEl = document.getElementById('photoCount');
-      const photos = getStoredPhotos();
-
-      countEl.innerText = `${photos.length} Fotoğraf`;
-
-      if (photos.length === 0) {
-        grid.innerHTML = `<div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Henüz fotoğraf yüklenmemiş. İlk fotoğrafı siz paylaşın!</div>`;
-        return;
-      }
-
-      grid.innerHTML = photos.map((url, index) => {
-        return `
-          <div class="group relative aspect-square rounded-2xl overflow-hidden glass-card cursor-pointer shadow-md hover:shadow-xl transition-all duration-300">
-            <img src="${url}" alt="Anı Fotoğrafı" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" onclick="openLightbox('${url}')">
-            ${isAdmin ? `
-              <button onclick="event.stopPropagation(); deletePhoto(${index})" class="absolute top-2 right-2 bg-red-600/90 hover:bg-red-600 text-white p-2 rounded-full backdrop-blur-sm transition shadow-lg" title="Fotoğrafı Sil">
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
-              </button>
-            ` : ''}
-          </div>
-        `;
-      }).join('');
-
-      lucide.createIcons();
-    }
-
-    // Yönetici Modu Modalı Aç/Kapat
-    function toggleAdminModal() {
-      const modal = document.getElementById('adminModal');
-      modal.classList.toggle('hidden');
-    }
-
-    // Şifre Doğrulama
-    function verifyAdmin() {
-      const input = document.getElementById('adminPassword').value;
-      if (input === ADMIN_PASS) {
-        isAdmin = true;
-        alert("Yönetici girişi başarılı! Fotoğrafları silme butonları aktif edildi.");
-        toggleAdminModal();
-        document.getElementById('adminPassword').value = ''; // Şifreyi temizle
-        renderGallery();
-      } else {
-        alert("Hatalı şifre!");
-      }
-    }
-
-    // Fotoğraf Silme
-    function deletePhoto(index) {
-      if (confirm("Bu fotoğrafı galeriden silmek istediğinize emin misiniz?")) {
-        const photos = getStoredPhotos();
-        photos.splice(index, 1);
-        saveStoredPhotos(photos);
-        renderGallery();
-      }
-    }
-
-    // Lightbox İşlemleri
-    function openLightbox(url) {
-      document.getElementById('lightboxImg').src = url;
-      document.getElementById('lightboxModal').classList.remove('hidden');
-    }
-
-    function closeLightbox() {
-      document.getElementById('lightboxModal').classList.add('hidden');
-    }
-
-    // İlk Çalıştırma
-    renderGallery();
-  </script>
-</body>
-</html>
+          palette
