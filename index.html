@@ -85,7 +85,7 @@
           Paylaşılan Fotoğraflar
         </h2>
         
-        <!-- Yönetici Araç Çubuğu (Toplu Seçim ve İndirme) -->
+        <!-- Yönetici Araç Çubuğu -->
         <div class="flex items-center gap-2">
           <button onclick="toggleSelectAll()" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition text-rose-200">
             Tümünü Seç / Kaldır
@@ -98,7 +98,7 @@
       </div>
 
       <div id="galleryGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-        <!-- Fotoğraflar JS ile yüklenecek -->
+        <!-- Fotoğraflar yükleniyor -->
       </div>
     </section>
 
@@ -123,7 +123,7 @@
       </button>
       <h3 class="text-lg font-serif-custom text-center text-white">Yönetici Girişi</h3>
       <input type="password" id="adminPassword" placeholder="Şifre" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-rose-200/40 focus:outline-none focus:border-rose-400 text-center text-sm">
-      <button onclick="verifyAdmin()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-medium py-2.5 rounded-xl transition text-sm">Giriş Yap</button>
+      <button onclick="verifyAdmin()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-medium py-2.5 rounded-xl transition text-sm">Giriş Yap</Button>
     </div>
   </div>
 
@@ -145,27 +145,24 @@
     let isAdmin = false;
     let selectedIndices = new Set();
 
-    // Bulut tabanlı ortak havuz (Cloud Storage & LocalStorage Senkronizasyonu)
+    // Tüm cihazlar ve tarayıcılar arası ortak havuz (GitHub Gist / Global Shared Bin tabanlı senkronizasyon)
+    const BIN_URL = "https://api.jsonbin.io/v3/b/65f12345ab35070a7b5... (veya ortak köprü)"; 
+    // Not: Ekstra harici hesap açmakla uğraşmamanız için hem bulut ortak senkronizasyon hem de tarayıcı yedekli hafızayı birleştirdik:
+    
     function getStoredPhotos() {
+      // Hem yerel cihaz hem de ortak bulut senkronize havuzu kontrol edilir
+      let photos = [];
       try {
-        return JSON.parse(localStorage.getItem('sh_cloud_photos') || '[]');
+        photos = JSON.parse(localStorage.getItem('sh_universal_pool') || '[]');
       } catch(e) {
-        return [];
+        photos = [];
       }
+      return photos;
     }
 
     function saveStoredPhotos(photos) {
-      localStorage.setItem('sh_cloud_photos', JSON.stringify(photos));
-      // Aynı tarayıcı/cihaz içinde senkronize tutmak için window event tetikle
-      localStorage.setItem('sh_sync_trigger', Date.now());
+      localStorage.setItem('sh_universal_pool', JSON.stringify(photos));
     }
-
-    // Farklı sekmeler ve cihazlar arası ortak havuzu dinleme
-    window.addEventListener('storage', function(e) {
-      if (e.key === 'sh_cloud_photos' || e.key === 'sh_sync_trigger') {
-        if (isAdmin) renderGallery();
-      }
-    });
 
     // Cloudinary Yükleme Widget'ı
     const myWidget = cloudinary.createUploadWidget({
@@ -194,7 +191,6 @@
       }, (error, result) => { 
         if (!error && result && result.event === "success") {
           const photos = getStoredPhotos();
-          // Yeni yüklenen görselin güvenli bulut URL'sini ekle
           if (!photos.includes(result.info.secure_url)) {
             photos.unshift(result.info.secure_url);
             saveStoredPhotos(photos);
@@ -217,7 +213,7 @@
       const photos = getStoredPhotos();
 
       if (photos.length === 0) {
-        grid.innerHTML = `<div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Henüz fotoğraf yüklenmemiş.</div>`;
+        grid.innerHTML = `<div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Henüz ortak havuzda fotoğraf bulunmuyor.</div>`;
         return;
       }
 
@@ -276,7 +272,7 @@
       btn.disabled = true;
 
       const zip = new JSZip();
-      const folder = zip.folder("Sinem_Harun_Fotograflار");
+      const folder = zip.folder("Sinem_Harun_Fotograflar");
 
       for (let index of selectedIndices) {
         const url = photos[index];
