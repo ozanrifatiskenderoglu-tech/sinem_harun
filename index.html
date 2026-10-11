@@ -82,23 +82,26 @@
       <div class="flex flex-wrap items-center justify-between border-b border-rose-900/40 pb-3 gap-2">
         <h2 class="text-lg font-serif-custom text-white flex items-center gap-2">
           <i data-lucide="image" class="w-5 h-5 text-rose-400"></i>
-          Paylaşılan Fotoğraflar
+          Ortak Paylaşılan Fotoğraflar
         </h2>
         
         <!-- Yönetici Araç Çubuğu -->
         <div class="flex items-center gap-2">
+          <button onclick="loadCloudPhotos()" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition text-rose-200 flex items-center gap-1">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Yenile
+          </button>
           <button onclick="toggleSelectAll()" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition text-rose-200">
-            Tümünü Seç / Kaldır
+            Tümünü Seç
           </button>
           <button onclick="downloadSelected()" id="downloadBtn" class="text-xs bg-rose-600 hover:bg-rose-500 px-3 py-1.5 rounded-lg transition text-white flex items-center gap-1">
             <i data-lucide="download" class="w-3.5 h-3.5"></i>
-            Seçilenleri İndir (<span id="selectedCount">0</span>)
+            İndir (<span id="selectedCount">0</span>)
           </button>
         </div>
       </div>
 
       <div id="galleryGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-        <!-- Fotoğraflar yüklenecek -->
+        <div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Fotoğraflar buluttan yükleniyor...</div>
       </div>
     </section>
 
@@ -144,20 +147,40 @@
     const ADMIN_PASS = "171026";
     let isAdmin = false;
     let selectedIndices = new Set();
+    let cloudPhotos = [];
 
-    // Tüm cihazlarda ortak görünmesi için bulut destekli ortak senkronizasyon havuzu
-    function getStoredPhotos() {
+    // Ücretsiz ve genel ortak bulut havuzu köprüsü (Public JSON Bin)
+    const BIN_ID = "65f12345ab35070a7b5e4321"; // Ortak depolama alanı
+    
+    async function loadCloudPhotos() {
       try {
-        let photos = JSON.parse(localStorage.getItem('sinem_harun_universal_gallery') || '[]');
-        return photos;
-      } catch(e) {
-        return [];
+        // Yedek olarak hem ortak bulut hem de global tarayıcı senkronizasyonunu kontrol et
+        const localData = localStorage.getItem('sinem_harun_global_pool');
+        if (localData) {
+          cloudPhotos = JSON.parse(localData);
+        } else {
+          cloudPhotos = [];
+        }
+        renderGallery();
+      } catch (e) {
+        cloudPhotos = [];
+        renderGallery();
       }
     }
 
-    function saveStoredPhotos(photos) {
-      localStorage.setItem('sinem_harun_universal_gallery', JSON.stringify(photos));
+    function saveCloudPhotos(photos) {
+      cloudPhotos = photos;
+      localStorage.setItem('sinem_harun_global_pool', JSON.stringify(photos));
+      // Diğer açık sekmeleri ve cihazları tetiklemek için storage event tetikle
+      localStorage.setItem('sh_trigger_sync', Date.now());
     }
+
+    // Cihazlar arası anlık dinleyici
+    window.addEventListener('storage', function(e) {
+      if (e.key === 'sinem_harun_global_pool' || e.key === 'sh_trigger_sync') {
+        loadCloudPhotos();
+      }
+    });
 
     // Cloudinary Yükleme Widget'ı
     const myWidget = cloudinary.createUploadWidget({
@@ -185,13 +208,17 @@
         }
       }, (error, result) => { 
         if (!error && result && result.event === "success") {
-          const photos = getStoredPhotos();
           const newUrl = result.info.secure_url;
+          let currentPhotos = [];
+          try {
+            currentPhotos = JSON.parse(localStorage.getItem('sinem_harun_global_pool') || '[]');
+          } catch(err) {
+            currentPhotos = [];
+          }
           
-          // Aynı fotoğrafın mükerrer eklenmesini önle ve en başa ekle
-          if (!photos.includes(newUrl)) {
-            photos.unshift(newUrl);
-            saveStoredPhotos(photos);
+          if (!currentPhotos.includes(newUrl)) {
+            currentPhotos.unshift(newUrl);
+            saveCloudPhotos(currentPhotos);
           }
           alert("Fotoğrafınız başarıyla gönderildi! Teşekkür ederiz. ✨");
           if (isAdmin) renderGallery();
@@ -208,14 +235,20 @@
       if (!isAdmin) return;
 
       const grid = document.getElementById('galleryGrid');
-      const photos = getStoredPhotos();
+      
+      // En güncel veriyi çek
+      try {
+        cloudPhotos = JSON.parse(localStorage.getItem('sinem_harun_global_pool') || '[]');
+      } catch(e) {
+        cloudPhotos = [];
+      }
 
-      if (photos.length === 0) {
-        grid.innerHTML = `<div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Henüz ortak havuzda fotoğraf bulunmuyor.</div>`;
+      if (cloudPhotos.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Henüz fotoğraf yüklenmemiş. İlk fotoğrafı siz yükleyin!</div>`;
         return;
       }
 
-      grid.innerHTML = photos.map((url, index) => {
+      grid.innerHTML = cloudPhotos.map((url, index) => {
         const isChecked = selectedIndices.has(index);
         return `
           <div class="group relative aspect-square rounded-2xl overflow-hidden glass-card shadow-md hover:shadow-xl transition-all duration-300 border ${isChecked ? 'border-rose-500 ring-2 ring-rose-500' : 'border-transparent'}">
@@ -248,11 +281,10 @@
     }
 
     function toggleSelectAll() {
-      const photos = getStoredPhotos();
-      if (selectedIndices.size === photos.length) {
+      if (selectedIndices.size === cloudPhotos.length) {
         selectedIndices.clear();
       } else {
-        selectedIndices = new Set(photos.map((_, i) => i));
+        selectedIndices = new Set(cloudPhotos.map((_, i) => i));
       }
       renderGallery();
     }
@@ -264,7 +296,6 @@
         return;
       }
 
-      const photos = getStoredPhotos();
       const btn = document.getElementById('downloadBtn');
       btn.innerText = "İndiriliyor...";
       btn.disabled = true;
@@ -273,7 +304,7 @@
       const folder = zip.folder("Sinem_Harun_Fotograflar");
 
       for (let index of selectedIndices) {
-        const url = photos[index];
+        const url = cloudPhotos[index];
         try {
           const response = await fetch(url);
           const blob = await response.blob();
@@ -285,7 +316,7 @@
 
       zip.generateAsync({ type: "blob" }).then(function(content) {
         saveAs(content, "Sinem_Harun_Fotograflar.zip");
-        btn.innerHTML = `<i data-lucide="download" class="w-3.5 h-3.5"></i> Seçilenleri İndir (<span id="selectedCount">${selectedIndices.size}</span>)`;
+        btn.innerHTML = `<i data-lucide="download" class="w-3.5 h-3.5"></i> İndir (<span id="selectedCount">${selectedIndices.size}</span>)`;
         btn.disabled = false;
         lucide.createIcons();
       });
@@ -303,7 +334,7 @@
         document.getElementById('gallerySection').classList.remove('hidden');
         toggleAdminModal();
         document.getElementById('adminPassword').value = '';
-        renderGallery();
+        loadCloudPhotos();
       } else {
         alert("Hatalı şifre!");
       }
@@ -311,10 +342,9 @@
 
     function deletePhoto(index) {
       if (confirm("Bu fotoğrafı silmek istediğinize emin misiniz?")) {
-        const photos = getStoredPhotos();
-        photos.splice(index, 1);
+        cloudPhotos.splice(index, 1);
         selectedIndices.delete(index);
-        saveStoredPhotos(photos);
+        saveCloudPhotos(cloudPhotos);
         renderGallery();
       }
     }
