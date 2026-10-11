@@ -6,7 +6,7 @@
   <title>Sinem & Harun - Fotoğraf Paylaşımı</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts: Playfair Display & Montserrat -->
+  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -53,7 +53,7 @@
   <!-- Ana İçerik -->
   <main class="container mx-auto max-w-4xl px-4 py-6 relative z-10 space-y-8 flex-grow">
     
-    <!-- Başlık / Karşılama Kartı -->
+    <!-- Başlık Kartı -->
     <div class="glass-card rounded-3xl p-8 text-center space-y-4 shadow-2xl relative overflow-hidden">
       <div class="space-y-1">
         <p class="text-xs tracking-widest text-rose-300 uppercase font-medium">Hoş Geldiniz</p>
@@ -74,24 +74,23 @@
       </div>
     </div>
 
-    <!-- Fotoğraf Galerisi Alanı (Dahili / Kendi İçinde Açılan) -->
+    <!-- Fotoğraf Galerisi -->
     <section class="space-y-4">
       <div class="flex items-center justify-between border-b border-rose-900/40 pb-3">
         <h2 class="text-lg font-serif-custom text-white flex items-center gap-2">
           <i data-lucide="image" class="w-5 h-5 text-rose-400"></i>
           Paylaşılan Fotoğraflar
         </h2>
-        <span id="photoCount" class="text-xs text-rose-200/60 bg-white/5 px-3 py-1 rounded-full">Yükleniyor...</span>
+        <span id="photoCount" class="text-xs text-rose-200/60 bg-white/5 px-3 py-1 rounded-full">0 Fotoğraf</span>
       </div>
 
-      <!-- Fotoğrafların Dizileceği Grid -->
       <div id="galleryGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-        <!-- JS ile dinamik dolacak -->
+        <!-- Fotoğraflar JS ile yüklenecek -->
       </div>
     </section>
   </main>
 
-  <!-- Alt Bilgi / Footer (Özel İmzalı & Linkli) -->
+  <!-- Alt Bilgi / Footer -->
   <footer class="relative z-10 text-center text-xs text-rose-100/70 py-6 font-light space-y-1">
     <div>Sevgiyle Paylaşın • Sinem & Harun ✨</div>
     <div class="text-[11px] opacity-80">
@@ -114,7 +113,7 @@
     </div>
   </div>
 
-  <!-- Tam Ekran Fotoğraf İnceleme Modalı (Lightbox) -->
+  <!-- Lightbox Modal -->
   <div id="lightboxModal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex items-center justify-center p-4" onclick="closeLightbox()">
     <button class="absolute top-4 right-4 text-white/80 hover:text-white p-2">
       <i data-lucide="x" class="w-8 h-8"></i>
@@ -122,7 +121,7 @@
     <img id="lightboxImg" src="" class="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl" onclick="event.stopPropagation()">
   </div>
 
-  <!-- Uygulama Mantığı (JS) -->
+  <!-- Uygulama JS Mantığı -->
   <script>
     lucide.createIcons();
 
@@ -130,6 +129,16 @@
     const UPLOAD_PRESET = "SINEM_HARUN";
     const ADMIN_PASS = "171026";
     let isAdmin = false;
+
+    // Fotoğrafları Yerel Depodan Al
+    function getStoredPhotos() {
+      return JSON.parse(localStorage.getItem('sh_photos') || '[]');
+    }
+
+    // Fotoğrafları Yerel Depoya Kaydet
+    function saveStoredPhotos(photos) {
+      localStorage.setItem('sh_photos', JSON.stringify(photos));
+    }
 
     // Cloudinary Yükleme Widget'ı
     const myWidget = cloudinary.createUploadWidget({
@@ -157,7 +166,10 @@
         }
       }, (error, result) => { 
         if (!error && result && result.event === "success") {
-          fetchPhotos(); // Yükleme başarılı olunca galeriyi yenile
+          const photos = getStoredPhotos();
+          photos.unshift(result.info.secure_url);
+          saveStoredPhotos(photos);
+          renderGallery();
         }
       }
     );
@@ -166,117 +178,20 @@
       myWidget.open();
     }, false);
 
-    // Fotoğrafları Güvenli Şekilde Yükleme ve Listeleme
-async function fetchPhotos() {
-  const grid = document.getElementById('galleryGrid');
-  const countEl = document.getElementById('photoCount');
-  
-  // LocalStorage / Yüklenen görselleri önbellekten ve etiket üzerinden listeleme
-  const localPhotos = JSON.parse(localStorage.getItem('uploaded_photos') || '[]');
-  
-  countEl.innerText = `${localPhotos.length} Fotoğraf`;
+    // Galeriyi Ekrana Basma
+    function renderGallery() {
+      const grid = document.getElementById('galleryGrid');
+      const countEl = document.getElementById('photoCount');
+      const photos = getStoredPhotos();
 
-  if (localPhotos.length === 0) {
-    grid.innerHTML = `<div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Henüz fotoğraf yüklenmemiş veya galeriniz güncelleniyor. İlk fotoğrafı siz paylaşın!</div>`;
-    return;
-  }
+      countEl.innerText = `${photos.length} Fotoğraf`;
 
-  grid.innerHTML = localPhotos.map(photo => {
-    return `
-      <div class="group relative aspect-square rounded-2xl overflow-hidden glass-card cursor-pointer shadow-md hover:shadow-xl transition-all duration-300">
-        <img src="${photo.secure_url}" alt="Anı Fotoğrafı" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" onclick="openLightbox('${photo.secure_url}')">
-        ${isAdmin ? `
-          <button onclick="event.stopPropagation(); deleteLocalPhoto('${photo.public_id}')" class="absolute top-2 right-2 bg-red-600/80 hover:bg-red-600 text-white p-1.5 rounded-full backdrop-blur-sm transition">
-            <i data-lucide="trash-2" class="w-4 h-4"></i>
-          </button>
-        ` : ''}
-      </div>
-    `;
-  }).join('');
-
-  lucide.createIcons();
-}
-
-// Yükleme Başarılı Olduğunda Fotoğrafı Listeye Ekleme
-const myWidget = cloudinary.createUploadWidget({
-    cloudName: CLOUD_NAME,
-    uploadPreset: UPLOAD_PRESET,
-    sources: ['local', 'camera'],
-    multiple: true,
-    maxFiles: 10
-  }, (error, result) => { 
-    if (!error && result && result.event === "success") {
-      let photos = JSON.parse(localStorage.getItem('uploaded_photos') || '[]');
-      photos.unshift(result.info);
-      localStorage.setItem('uploaded_photos', JSON.stringify(photos));
-      fetchPhotos();
-    }
-  }
-);
-
-        const data = await response.json();
-        const photos = data.resources || [];
-        
-        countEl.innerText = `${photos.length} Fotoğraf`;
-
-        if (photos.length === 0) {
-          grid.innerHTML = `<div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Henüz fotoğraf yüklenmemiş.</div>`;
-          return;
-        }
-
-        grid.innerHTML = photos.map(photo => {
-          const imgUrl = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/c_fill,w_400,h_400,q_auto,f_auto/v${photo.version}/${photo.public_id}.${photo.format}`;
-          const fullUrl = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/q_auto,f_auto/v${photo.version}/${photo.public_id}.${photo.format}`;
-          
-          return `
-            <div class="group relative aspect-square rounded-2xl overflow-hidden glass-card cursor-pointer shadow-md hover:shadow-xl transition-all duration-300">
-              <img src="${imgUrl}" alt="Anı Fotoğrafı" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" onclick="openLightbox('${fullUrl}')">
-              ${isAdmin ? `
-                <button onclick="event.stopPropagation(); deletePhoto('${photo.public_id}')" class="absolute top-2 right-2 bg-red-600/80 hover:bg-red-600 text-white p-1.5 rounded-full backdrop-blur-sm transition">
-                  <i data-lucide="trash-2" class="w-4 h-4"></i>
-                </button>
-              ` : ''}
-            </div>
-          `;
-        }).join('');
-
-        lucide.createIcons();
-
-      } catch (err) {
-        grid.innerHTML = `<div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Fotoğraflar yüklenirken bir durum oluştu.</div>`;
-        countEl.innerText = "";
+      if (photos.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Henüz fotoğraf yüklenmemiş. İlk fotoğrafı siz paylaşın!</div>`;
+        return;
       }
-    }
 
-    // Modal İşlemleri
-    function toggleAdminModal() {
-      const modal = document.getElementById('adminModal');
-      modal.classList.toggle('hidden');
-    }
-
-    function verifyAdmin() {
-      const input = document.getElementById('adminPassword').value;
-      if (input === ADMIN_PASS) {
-        isAdmin = true;
-        alert("Yönetici moduna geçildi. Artık fotoğrafları silebilirsiniz.");
-        toggleAdminModal();
-        fetchPhotos();
-      } else {
-        alert("Hatalı şifre!");
-      }
-    }
-
-    function openLightbox(url) {
-      document.getElementById('lightboxImg').src = url;
-      document.getElementById('lightboxModal').classList.remove('hidden');
-    }
-
-    function closeLightbox() {
-      document.getElementById('lightboxModal').classList.add('hidden');
-    }
-
-    // Doğrulama: Adımın başarılı şekilde çalışıp çalışmadığını galeriyi yükleyerek test ediyoruz.
-    fetchPhotos();
-  </script>
-</body>
-</html>
+      grid.innerHTML = photos.map((url, index) => {
+        return `
+          <div class="group relative aspect-square rounded-2xl overflow-hidden glass-card cursor-pointer shadow-md hover:shadow-xl transition-all duration-300">
+            <img src="${url}" alt="Anı Fotoğrafı" class
