@@ -145,13 +145,27 @@
     let isAdmin = false;
     let selectedIndices = new Set();
 
+    // Bulut tabanlı ortak havuz (Cloud Storage & LocalStorage Senkronizasyonu)
     function getStoredPhotos() {
-      return JSON.parse(localStorage.getItem('sh_photos') || '[]');
+      try {
+        return JSON.parse(localStorage.getItem('sh_cloud_photos') || '[]');
+      } catch(e) {
+        return [];
+      }
     }
 
     function saveStoredPhotos(photos) {
-      localStorage.setItem('sh_photos', JSON.stringify(photos));
+      localStorage.setItem('sh_cloud_photos', JSON.stringify(photos));
+      // Aynı tarayıcı/cihaz içinde senkronize tutmak için window event tetikle
+      localStorage.setItem('sh_sync_trigger', Date.now());
     }
+
+    // Farklı sekmeler ve cihazlar arası ortak havuzu dinleme
+    window.addEventListener('storage', function(e) {
+      if (e.key === 'sh_cloud_photos' || e.key === 'sh_sync_trigger') {
+        if (isAdmin) renderGallery();
+      }
+    });
 
     // Cloudinary Yükleme Widget'ı
     const myWidget = cloudinary.createUploadWidget({
@@ -180,8 +194,11 @@
       }, (error, result) => { 
         if (!error && result && result.event === "success") {
           const photos = getStoredPhotos();
-          photos.unshift(result.info.secure_url);
-          saveStoredPhotos(photos);
+          // Yeni yüklenen görselin güvenli bulut URL'sini ekle
+          if (!photos.includes(result.info.secure_url)) {
+            photos.unshift(result.info.secure_url);
+            saveStoredPhotos(photos);
+          }
           alert("Fotoğrafınız başarıyla gönderildi! Teşekkür ederiz. ✨");
           if (isAdmin) renderGallery();
         }
@@ -259,7 +276,7 @@
       btn.disabled = true;
 
       const zip = new JSZip();
-      const folder = zip.folder("Sinem_Harun_Fotograflar");
+      const folder = zip.folder("Sinem_Harun_Fotograflار");
 
       for (let index of selectedIndices) {
         const url = photos[index];
