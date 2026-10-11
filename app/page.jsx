@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 export default function Home() {
   const CLOUD_NAME = "qlxdd0ki";
-  const UPLOAD_PRESET = "SINEM_HARUN";
+  const UPLOAD_PRESET = "SİNEM_HARUN";
   const ADMIN_PASS = "171026";
 
   const [isAdmin, setIsAdmin] = useState(false);
