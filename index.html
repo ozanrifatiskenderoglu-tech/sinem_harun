@@ -4,45 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sinem & Harun - Fotoğraf Paylaşımı</title>
-  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Cloudinary Upload Widget -->
   <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
-  <!-- Toplu İndirme İçin JSZip ve FileSaver -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
   <style>
-    body {
-      font-family: 'Montserrat', sans-serif;
-      background: linear-gradient(135deg, #1a050b 0%, #2b0914 50%, #150308 100%);
-    }
-    .font-serif-custom {
-      font-family: 'Playfair Display', serif;
-    }
-    .glass-card {
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    .glass-modal {
-      background: rgba(20, 5, 10, 0.95);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-    }
+    body { font-family: 'Montserrat', sans-serif; background: linear-gradient(135deg, #1a050b 0%, #2b0914 50%, #150308 100%); }
+    .font-serif-custom { font-family: 'Playfair Display', serif; }
+    .glass-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    .glass-modal { background: rgba(20, 5, 10, 0.95); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.15); }
   </style>
 </head>
 <body class="min-h-screen text-rose-50 flex flex-col justify-between relative overflow-x-hidden">
-
-  <!-- Arka Plan Süslemeleri -->
   <div class="fixed -top-32 -left-32 w-96 h-96 bg-rose-900/20 rounded-full blur-3xl pointer-events-none"></div>
   <div class="fixed -bottom-32 -right-32 w-96 h-96 bg-amber-900/20 rounded-full blur-3xl pointer-events-none"></div>
 
-  <!-- Üst Bar & Kilit İkonu -->
   <header class="p-4 flex justify-between items-center relative z-20 container mx-auto max-w-4xl">
     <div class="flex items-center space-x-2">
       <i data-lucide="heart" class="w-5 h-5 text-rose-400 fill-rose-400/30"></i>
@@ -53,235 +31,129 @@
     </button>
   </header>
 
-  <!-- Ana İçerik -->
   <main class="container mx-auto max-w-4xl px-4 py-6 relative z-10 space-y-8 flex-grow">
-    
-    <!-- Başlık Kartı -->
     <div class="glass-card rounded-3xl p-8 text-center space-y-4 shadow-2xl relative overflow-hidden">
       <div class="space-y-1">
         <p class="text-xs tracking-widest text-rose-300 uppercase font-medium">Hoş Geldiniz</p>
         <h1 class="text-4xl md:text-5xl font-serif-custom text-white font-medium tracking-wide">Sinem & Harun</h1>
         <p class="text-sm text-rose-200/80 pt-1 font-light">17 Ekim 2026</p>
       </div>
-
       <p class="text-sm text-rose-100/70 max-w-md mx-auto font-light leading-relaxed">
         Bu özel günümüzden çektiğiniz tüm güzel anıları ve fotoğrafları bizimle paylaşarak albümümüze katkıda bulunabilirsiniz. ✨
       </p>
-
-      <!-- Yükleme Butonu -->
       <div class="pt-2">
-        <button id="upload_widget" class="inline-flex items-center space-x-2 bg-gradient-to-r from-rose-600 to-rose-800 hover:from-rose-500 hover:to-rose-700 text-white px-8 py-3.5 rounded-full font-medium shadow-lg hover:shadow-rose-900/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer">
+        <button id="upload_widget" class="inline-flex items-center space-x-2 bg-gradient-to-r from-rose-600 to-rose-800 hover:from-rose-500 hover:to-rose-700 text-white px-8 py-3.5 rounded-full font-medium shadow-lg hover:shadow-rose-900/40 transition-all cursor-pointer">
           <i data-lucide="camera" class="w-5 h-5"></i>
           <span>Fotoğraf Yükle</span>
         </button>
       </div>
     </div>
 
-    <!-- Kilitli Galeri Alanı (Şifre Girilince Açılır) -->
     <section id="gallerySection" class="space-y-4 hidden">
       <div class="flex flex-wrap items-center justify-between border-b border-rose-900/40 pb-3 gap-2">
         <h2 class="text-lg font-serif-custom text-white flex items-center gap-2">
           <i data-lucide="image" class="w-5 h-5 text-rose-400"></i>
-          Buluttaki Paylaşılan Fotoğraflar
+          Paylaşılan Fotoğraflar
         </h2>
-        
-        <!-- Yönetici Araç Çubuğu -->
         <div class="flex items-center gap-2">
-          <button onclick="fetchCloudinaryPhotos()" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition text-rose-200 flex items-center gap-1">
-            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Yenile
-          </button>
-          <button onclick="toggleSelectAll()" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition text-rose-200">
-            Tümünü Seç
-          </button>
+          <button onclick="toggleSelectAll()" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition text-rose-200">Tümünü Seç</button>
           <button onclick="downloadSelected()" id="downloadBtn" class="text-xs bg-rose-600 hover:bg-rose-500 px-3 py-1.5 rounded-lg transition text-white flex items-center gap-1">
-            <i data-lucide="download" class="w-3.5 h-3.5"></i>
-            İndir (<span id="selectedCount">0</span>)
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> İndir (<span id="selectedCount">0</span>)
           </button>
         </div>
       </div>
-
-      <div id="galleryGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-        <div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Fotoğraflar yükleniyor...</div>
-      </div>
+      <div id="galleryGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4"></div>
     </section>
-
   </main>
 
-  <!-- Alt Bilgi / Footer -->
   <footer class="relative z-10 text-center text-xs text-rose-100/70 py-6 font-light space-y-1">
     <div>Sevgiyle Paylaşın • Sinem & Harun ✨</div>
-    <div class="text-[11px] opacity-80">
-      Created by 
-      <a href="https://instagram.com/ori.bilisim" target="_blank" class="font-semibold tracking-wide underline hover:text-white transition">
-        ori.bilisim 🤍
-      </a>
-    </div>
+    <div class="text-[11px] opacity-80">Created by <a href="https://instagram.com/ori.bilisim" target="_blank" class="font-semibold underline hover:text-white transition">ori.bilisim 🤍</a></div>
   </footer>
 
-  <!-- Yönetici Giriş Modalı -->
   <div id="adminModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm hidden">
     <div class="glass-modal rounded-2xl p-6 w-full max-w-xs space-y-4 shadow-2xl relative border border-white/20">
-      <button onclick="toggleAdminModal()" class="absolute top-4 right-4 text-rose-200/60 hover:text-white">
-        <i data-lucide="x" class="w-5 h-5"></i>
-      </button>
+      <button onclick="toggleAdminModal()" class="absolute top-4 right-4 text-rose-200/60 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
       <h3 class="text-lg font-serif-custom text-center text-white">Yönetici Girişi</h3>
       <input type="password" id="adminPassword" placeholder="Şifre" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-rose-200/40 focus:outline-none focus:border-rose-400 text-center text-sm">
       <button onclick="verifyAdmin()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-medium py-2.5 rounded-xl transition text-sm">Giriş Yap</button>
     </div>
   </div>
 
-  <!-- Lightbox Modal -->
   <div id="lightboxModal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex items-center justify-center p-4" onclick="closeLightbox()">
-    <button class="absolute top-4 right-4 text-white/80 hover:text-white p-2">
-      <i data-lucide="x" class="w-8 h-8"></i>
-    </button>
+    <button class="absolute top-4 right-4 text-white/80 hover:text-white p-2"><i data-lucide="x" class="w-8 h-8"></i></button>
     <img id="lightboxImg" src="" class="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl" onclick="event.stopPropagation()">
   </div>
 
-  <!-- Uygulama JS Mantığı -->
   <script>
     lucide.createIcons();
+    const CLOUD_NAME = "qlxdd0ki", UPLOAD_PRESET = "SINEM_HARUN", ADMIN_PASS = "171026";
+    let isAdmin = false, selectedIndices = new Set();
 
-    const CLOUD_NAME = "qlxdd0ki";
-    const UPLOAD_PRESET = "SINEM_HARUN";
-    const ADMIN_PASS = "171026";
-    let isAdmin = false;
-    let selectedIndices = new Set();
-    let cloudPhotos = [];
-
-    // Cloudinary'den Doğrudan Bulut Listesini Çekme (Resource List Aktif)
-    async function fetchCloudinaryPhotos() {
-      const grid = document.getElementById('galleryGrid');
-      grid.innerHTML = `<div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Cloudinary bulutundan fotoğraflar taranıyor...</div>`;
-
-      try {
-        const response = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/${UPLOAD_PRESET}.json`);
-        if (!response.ok) throw new Error("Liste alınamadı");
-        
-        const data = await response.json();
-        cloudPhotos = data.resources || [];
-        renderGallery();
-      } catch (err) {
-        // Eğer bir sebepten listeleme gecikirse veya boşsa yedek havuzu devreye sok
-        cloudPhotos = [];
-        grid.innerHTML = `<div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Henüz Cloudinary'de fotoğraf bulunmuyor veya yükleme bekleniyor. İlk fotoğrafı yükleyin!</div>`;
-      }
+    function getStoredPhotos() {
+      try { return JSON.parse(localStorage.getItem('sinem_harun_wedding_gallery') || '[]'); } catch(e) { return []; }
     }
+    function saveStoredPhotos(p) { localStorage.setItem('sinem_harun_wedding_gallery', JSON.stringify(p)); }
 
-    // Cloudinary Yükleme Widget'ı
     const myWidget = cloudinary.createUploadWidget({
-        cloudName: CLOUD_NAME,
-        uploadPreset: UPLOAD_PRESET,
-        tags: [UPLOAD_PRESET],
-        sources: ['local', 'camera'],
-        multiple: true,
-        maxFiles: 10,
-        styles: {
-          palette: {
-            window: "#1a050b",
-            sourceBg: "#150308",
-            windowBorder: "#2b0914",
-            tabIcon: "#f43f5e",
-            inactiveTabIcon: "#9f1239",
-            menuIcons: "#f43f5e",
-            link: "#f43f5e",
-            action: "#e11d48",
-            inProgress: "#f43f5e",
-            complete: "#10b981",
-            error: "#f87171",
-            textDark: "#000000",
-            textLight: "#ffffff"
-          }
+      cloudName: CLOUD_NAME, uploadPreset: UPLOAD_PRESET, sources: ['local', 'camera'], multiple: true, maxFiles: 10
+    }, (error, result) => { 
+      if (!error && result && result.event === "success") {
+        let photos = getStoredPhotos();
+        if (!photos.includes(result.info.secure_url)) {
+          photos.unshift(result.info.secure_url);
+          saveStoredPhotos(photos);
         }
-      }, (error, result) => { 
-        if (!error && result && result.event === "success") {
-          alert("Fotoğrafınız başarıyla gönderildi! Teşekkür ederiz. ✨");
-          if (isAdmin) fetchCloudinaryPhotos();
-        }
+        alert("Fotoğrafınız başarıyla gönderildi! Teşekkür ederiz. ✨");
+        if (isAdmin) renderGallery();
       }
-    );
+    });
 
-    document.getElementById("upload_widget").addEventListener("click", function(){
-      myWidget.open();
-    }, false);
+    document.getElementById("upload_widget").addEventListener("click", () => myWidget.open(), false);
 
-    // Galeriyi Ekrana Basma
     function renderGallery() {
       if (!isAdmin) return;
-
-      const grid = document.getElementById('galleryGrid');
-
-      if (cloudPhotos.length === 0) {
-        grid.innerHTML = `<div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Henüz yüklenmiş fotoğraf yok.</div>`;
+      const grid = document.getElementById('galleryGrid'), photos = getStoredPhotos();
+      if (photos.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center text-rose-200/50 py-8 text-sm">Henüz fotoğraf yüklenmemiş.</div>`;
         return;
       }
-
-      grid.innerHTML = cloudPhotos.map((photo, index) => {
-        // Cloudinary gelen nesnesinden güvenli URL oluşturma
-        const url = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/q_auto,f_auto/v${photo.version}/${photo.public_id}.${photo.format}`;
-        const isChecked = selectedIndices.has(index);
-
+      grid.innerHTML = photos.map((url, i) => {
+        const isChecked = selectedIndices.has(i);
         return `
-          <div class="group relative aspect-square rounded-2xl overflow-hidden glass-card shadow-md hover:shadow-xl transition-all duration-300 border ${isChecked ? 'border-rose-500 ring-2 ring-rose-500' : 'border-transparent'}">
-            <!-- Seçim Kutusu -->
-            <input type="checkbox" onchange="toggleSelectPhoto(${index})" ${isChecked ? 'checked' : ''} class="absolute top-2 left-2 z-20 w-5 h-5 accent-rose-600 cursor-pointer">
-            
-            <!-- Fotoğraf -->
-            <img src="${url}" alt="Anı Fotoğrafı" class="w-full h-full object-cover group-hover:scale-105 transition duration-500 cursor-pointer" onclick="openLightbox('${url}')">
-          </div>
-        `;
+          <div class="group relative aspect-square rounded-2xl overflow-hidden glass-card shadow-md border ${isChecked ? 'border-rose-500 ring-2 ring-rose-500' : 'border-transparent'}">
+            <input type="checkbox" onchange="toggleSelectPhoto(${i})" ${isChecked ? 'checked' : ''} class="absolute top-2 left-2 z-20 w-5 h-5 accent-rose-600 cursor-pointer">
+            <img src="${url}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500 cursor-pointer" onclick="openLightbox('${url}')">
+            <button onclick="event.stopPropagation(); deletePhoto(${i})" class="absolute top-2 right-2 z-25 bg-red-600 text-white p-1.5 rounded-full shadow-lg" title="Sil"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+          </div>`;
       }).join('');
-
       document.getElementById('selectedCount').innerText = selectedIndices.size;
       lucide.createIcons();
     }
 
-    // Seçim İşlemleri
-    function toggleSelectPhoto(index) {
-      if (selectedIndices.has(index)) {
-        selectedIndices.delete(index);
-      } else {
-        selectedIndices.add(index);
-      }
+    function toggleSelectPhoto(i) {
+      selectedIndices.has(i) ? selectedIndices.delete(i) : selectedIndices.add(i);
       renderGallery();
     }
 
     function toggleSelectAll() {
-      if (selectedIndices.size === cloudPhotos.length) {
-        selectedIndices.clear();
-      } else {
-        selectedIndices = new Set(cloudPhotos.map((_, i) => i));
-      }
+      const photos = getStoredPhotos();
+      selectedIndices.size === photos.length ? selectedIndices.clear() : (selectedIndices = new Set(photos.map((_, i) => i)));
       renderGallery();
     }
 
-    // Toplu İndirme (ZIP)
     async function downloadSelected() {
-      if (selectedIndices.size === 0) {
-        alert("Lütfen önce indirilecek fotoğrafları seçin!");
-        return;
-      }
-
-      const btn = document.getElementById('downloadBtn');
-      btn.innerText = "İndiriliyor...";
-      btn.disabled = true;
-
-      const zip = new JSZip();
-      const folder = zip.folder("Sinem_Harun_Fotograflar");
-
-      for (let index of selectedIndices) {
-        const photo = cloudPhotos[index];
-        const url = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/v${photo.version}/${photo.public_id}.${photo.format}`;
+      if (selectedIndices.size === 0) return alert("Lütfen önce fotoğraf seçin!");
+      const photos = getStoredPhotos(), btn = document.getElementById('downloadBtn');
+      btn.innerText = "İndiriliyor..."; btn.disabled = true;
+      const zip = new JSZip(), folder = zip.folder("Sinem_Harun_Fotograflar");
+      for (let i of selectedIndices) {
         try {
-          const response = await fetch(url);
-          const blob = await response.blob();
-          folder.file(`foto_${index + 1}.jpg`, blob);
-        } catch (e) {
-          console.error("Fotoğraf indirilemedi:", url);
-        }
+          const res = await fetch(photos[i]);
+          folder.file(`foto_${i + 1}.jpg`, await res.blob());
+        } catch(e) {}
       }
-
-      zip.generateAsync({ type: "blob" }).then(function(content) {
+      zip.generateAsync({ type: "blob" }).then(content => {
         saveAs(content, "Sinem_Harun_Fotograflar.zip");
         btn.innerHTML = `<i data-lucide="download" class="w-3.5 h-3.5"></i> İndir (<span id="selectedCount">${selectedIndices.size}</span>)`;
         btn.disabled = false;
@@ -289,33 +161,25 @@
       });
     }
 
-    // Yönetici Modu
-    function toggleAdminModal() {
-      document.getElementById('adminModal').classList.toggle('hidden');
-    }
-
+    function toggleAdminModal() { document.getElementById('adminModal').classList.toggle('hidden'); }
     function verifyAdmin() {
-      const input = document.getElementById('adminPassword').value;
-      if (input === ADMIN_PASS) {
+      if (document.getElementById('adminPassword').value === ADMIN_PASS) {
         isAdmin = true;
         document.getElementById('gallerySection').classList.remove('hidden');
         toggleAdminModal();
         document.getElementById('adminPassword').value = '';
-        fetchCloudinaryPhotos(); // Şifre girilince buluttan fotoğrafları çek
-      } else {
-        alert("Hatalı şifre!");
+        renderGallery();
+      } else { alert("Hatalı şifre!"); }
+    }
+    function deletePhoto(i) {
+      if (confirm("Silmek istediğinize emin misiniz?")) {
+        let photos = getStoredPhotos();
+        photos.splice(i, 1); selectedIndices.delete(i);
+        saveStoredPhotos(photos); renderGallery();
       }
     }
-
-    // Lightbox
-    function openLightbox(url) {
-      document.getElementById('lightboxImg').src = url;
-      document.getElementById('lightboxModal').classList.remove('hidden');
-    }
-
-    function closeLightbox() {
-      document.getElementById('lightboxModal').classList.add('hidden');
-    }
+    function openLightbox(url) { document.getElementById('lightboxImg').src = url; document.getElementById('lightboxModal').classList.remove('hidden'); }
+    function closeLightbox() { document.getElementById('lightboxModal').classList.add('hidden'); }
   </script>
 </body>
 </html>
