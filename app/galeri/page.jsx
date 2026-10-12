@@ -2,10 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 export default function GaleriSayfasi() {
-  const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [photos, setPhotos] = useState([]);
   const [selectedIndices, setSelectedIndices] = useState(new Set());
@@ -16,8 +14,7 @@ export default function GaleriSayfasi() {
   const ADMIN_PASS = "171026";
 
   useEffect(() => {
-    // Oturum izni kontrolü
-    const auth = sessionStorage.getItem('is_admin_logged');
+    const auth = localStorage.getItem('sinem_harun_is_admin');
     if (auth === 'true') {
       setIsAuthenticated(true);
       loadPhotos();
@@ -38,7 +35,7 @@ export default function GaleriSayfasi() {
   const handleDirectLogin = (e) => {
     e.preventDefault();
     if (directPassword === ADMIN_PASS) {
-      sessionStorage.setItem('is_admin_logged', 'true');
+      localStorage.setItem('sinem_harun_is_admin', 'true');
       setIsAuthenticated(true);
       loadPhotos();
     } else {
@@ -103,7 +100,6 @@ export default function GaleriSayfasi() {
     alert(`${count} fotoğraf başarıyla indirildi!`);
   };
 
-  // Eğer şifre girilmediyse doğrudan linkle gelenlere şifre ekranı göster
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen text-rose-50 flex flex-col items-center justify-center relative overflow-x-hidden p-4" style={{ background: 'linear-gradient(135deg, #1a050b 0%, #2b0914 50%, #150308 100%)' }}>
