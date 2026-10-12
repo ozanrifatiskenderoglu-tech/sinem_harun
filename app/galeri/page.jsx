@@ -12,24 +12,22 @@ export default function GaleriSayfasi() {
   const [lightboxImg, setLightboxImg] = useState(null);
 
   const ADMIN_PASS = "171026";
-  const CLOUD_NAME = "qlxdd0ki";
-  const UPLOAD_PRESET = "SINEM_HARUN";
 
   useEffect(() => {
     const auth = sessionStorage.getItem('is_admin_logged');
     if (auth === 'true') {
       setIsAuthenticated(true);
-      fetchPhotos();
+      fetchPhotosFromApi();
     } else {
       setLoading(false);
     }
   }, []);
 
-  const fetchPhotos = async () => {
+  const fetchPhotosFromApi = async () => {
     setLoading(true);
     let allPhotos = [];
 
-    // 1. Önce localStorage'dan son yüklenenleri al
+    // 1. Önce localStorage'dan anlık yüklenenleri al
     try {
       const stored = localStorage.getItem('sinem_harun_wedding_gallery');
       if (stored) {
@@ -38,20 +36,16 @@ export default function GaleriSayfasi() {
       }
     } catch (e) {}
 
-    // 2. Cloudinary bulutundan klasör fotoğraflarını çekmeye çalış
+    // 2. Kendi güvenli API'mizden Cloudinary fotoğraflarını çek
     try {
-      const res = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/${UPLOAD_PRESET}.json`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.resources) {
-          const cloudPhotos = data.resources.map(file => 
-            `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/v${file.version}/${file.public_id}.${file.format}`
-          );
-          allPhotos = Array.from(new Set([...cloudPhotos, ...allPhotos]));
-        }
+      const res = await fetch('/api/fotos');
+      const data = await res.json();
+      if (data.success && data.photos) {
+        const cloudPhotos = data.photos.map(file => file.secure_url);
+        allPhotos = Array.from(new Set([...cloudPhotos, ...allPhotos]));
       }
     } catch (err) {
-      console.log("Bulut listesi alınamadı, yerel veriler kullanılıyor.");
+      console.error("API'den fotoğraflar alınamadı:", err);
     }
 
     setPhotos(allPhotos);
@@ -63,7 +57,7 @@ export default function GaleriSayfasi() {
     if (passwordInput === ADMIN_PASS) {
       sessionStorage.setItem('is_admin_logged', 'true');
       setIsAuthenticated(true);
-      fetchPhotos();
+      fetchPhotosFromApi();
     } else {
       setErrorMsg(true);
       setPasswordInput('');
