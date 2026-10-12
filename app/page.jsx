@@ -96,6 +96,34 @@ export default function AnaSayfa() {
     }
   };
 
+  // Toplu İndirme Fonksiyonu
+  const downloadSelected = async () => {
+    if (selectedIndices.size === 0) return;
+    setIsDownloading(true);
+    let count = 0;
+    for (const i of selectedIndices) {
+      const url = photos[i];
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `sinem-harun-${i + 1}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+        count++;
+        await new Promise((r) => setTimeout(r, 300));
+      } catch (err) {
+        console.error("İndirme hatası:", err);
+      }
+    }
+    setIsDownloading(false);
+    alert(`${count} fotoğraf başarıyla indirildi!`);
+  };
+
   return (
     <div className="min-h-screen text-rose-50 flex flex-col justify-between relative overflow-x-hidden" style={{ background: 'linear-gradient(135deg, #1a050b 0%, #2b0914 50%, #150308 100%)' }}>
       <div className="fixed -top-32 -left-32 w-96 h-96 bg-rose-900/20 rounded-full blur-3xl pointer-events-none"></div>
@@ -106,7 +134,7 @@ export default function AnaSayfa() {
           <span className="text-xs uppercase tracking-widest text-rose-200/70 font-light">Anı Albümü</span>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/galeri" className="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition text-rose-200">
+          <Link href="/galeri" className="text-xs bg-white/10 hover:bg-white/20 px-3.5 py-1.5 rounded-full transition text-rose-200 shadow-sm">
             Bulut Galeriye Git →
           </Link>
           <button onClick={() => setIsAdminModalOpen(true)} className="p-2 text-rose-200/60 hover:text-rose-100 transition rounded-full hover:bg-white/5" title="Yönetici Girişi">
@@ -132,7 +160,7 @@ export default function AnaSayfa() {
           </div>
         </div>
 
-        {/* Kilitli Yönetici Alanı */}
+        {/* Yönetici Paneli (Şifre Girilince Görünür) */}
         {isAdmin && (
           <section className="space-y-4">
             <div className="flex flex-wrap items-center justify-between border-b border-rose-900/40 pb-3 gap-2">
@@ -140,7 +168,14 @@ export default function AnaSayfa() {
                 Yönetici Albümü ({photos.length})
               </h2>
               <div className="flex items-center gap-2">
-                <button onClick={toggleSelectAll} className="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition text-rose-200">Tümünü Seç</button>
+                <button onClick={toggleSelectAll} className="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition text-rose-200">
+                  {selectedIndices.size === photos.length ? 'Seçimi Kaldır' : 'Tümünü Seç'}
+                </button>
+                {selectedIndices.size > 0 && (
+                  <button onClick={downloadSelected} disabled={isDownloading} className="text-xs bg-rose-600 hover:bg-rose-500 px-3 py-1.5 rounded-lg transition text-white shadow-md disabled:opacity-50">
+                    {isDownloading ? 'İndiriliyor...' : `Seçilenleri İndir (${selectedIndices.size})`}
+                  </button>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
@@ -150,7 +185,7 @@ export default function AnaSayfa() {
                   <div key={i} className={`group relative aspect-square rounded-2xl overflow-hidden shadow-md border ${isChecked ? 'border-rose-500 ring-2 ring-rose-500' : 'border-transparent'}`} style={{ background: 'rgba(255, 255, 255, 0.05)' }}>
                     <input type="checkbox" checked={isChecked} onChange={() => toggleSelectPhoto(i)} className="absolute top-2 left-2 z-20 w-5 h-5 accent-rose-600 cursor-pointer" />
                     <img src={url} alt="Yüklenen fotoğraf" className="w-full h-full object-cover group-hover:scale-105 transition duration-500 cursor-pointer" onClick={() => setLightboxImg(url)} />
-                    <button onClick={() => deletePhoto(i)} className="absolute top-2 right-2 z-25 bg-red-600 text-white p-1.5 rounded-full shadow-lg" title="Sil">🗑️</button>
+                    <button onClick={() => deletePhoto(i)} className="absolute top-2 right-2 z-25 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded-full shadow-lg transition" title="Sil">🗑️</button>
                   </div>
                 );
               })}
@@ -186,4 +221,3 @@ export default function AnaSayfa() {
     </div>
   );
 }
-
