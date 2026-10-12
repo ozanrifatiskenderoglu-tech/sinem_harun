@@ -16,10 +16,10 @@ export default async function GaleriSayfasi({ searchParams }) {
   const cookieStore = cookies();
   const authCookie = cookieStore.get('admin_auth');
 
-  // Şifre gönderildiyse kontrol et
-  const params = await searchParams;
-  if (params?.password) {
-    if (params.password === ADMIN_PASS) {
+  // Şifre URL üzerinden gönderildiyse kontrol et (await kaldırıldı)
+  const password = searchParams?.password;
+  if (password) {
+    if (password === ADMIN_PASS) {
       cookieStore.set('admin_auth', 'true', { httpOnly: true, path: '/' });
       redirect('/galeri');
     }
@@ -50,7 +50,7 @@ export default async function GaleriSayfasi({ searchParams }) {
             </button>
           </form>
 
-          {params?.password && (
+          {password && password !== ADMIN_PASS && (
             <p className="text-xs text-red-400">Hatalı şifre!</p>
           )}
 
