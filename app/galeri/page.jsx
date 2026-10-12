@@ -5,14 +5,13 @@ import Link from 'next/link';
 
 export default function GaleriSayfasi() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [fotograflar, setFotograflar] = useState([]);
+  const [photos, setPhotos] = useState([]);
   const [passwordInput, setPasswordInput] = useState('');
   const [errorMsg, setErrorMsg] = useState(false);
 
   const ADMIN_PASS = "171026";
 
   useEffect(() => {
-    // Daha önce oturum açılmış mı kontrol et
     const auth = sessionStorage.getItem('is_admin_logged');
     if (auth === 'true') {
       setIsAuthenticated(true);
@@ -24,7 +23,7 @@ export default function GaleriSayfasi() {
     try {
       const stored = localStorage.getItem('sinem_harun_wedding_gallery');
       if (stored) {
-        setFotograflar(JSON.parse(stored));
+        setPhotos(JSON.parse(stored));
       }
     } catch (e) {
       console.error("Fotoğraflar yüklenemedi:", e);
@@ -43,7 +42,6 @@ export default function GaleriSayfasi() {
     }
   };
 
-  // Eğer şifre girilmemişse şifre ekranını göster
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen text-rose-50 flex flex-col items-center justify-center relative overflow-x-hidden p-4" style={{ background: 'linear-gradient(135deg, #1a050b 0%, #2b0914 50%, #150308 100%)' }}>
@@ -83,12 +81,10 @@ export default function GaleriSayfasi() {
     );
   }
 
-  // Şifre doğruysa albümü göster
   return (
     <div className="min-h-screen text-rose-50 flex flex-col justify-between p-6 md:p-12" style={{ background: 'linear-gradient(135deg, #1a050b 0%, #2b0914 50%, #150308 100%)' }}>
       <div className="max-w-6xl mx-auto w-full space-y-8 flex-grow">
         
-        {/* Üst Menü */}
         <div className="flex justify-between items-center border-b border-rose-900/40 pb-4">
           <Link href="/" className="text-xs bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl transition text-rose-200">
             ← Ana Sayfaya Dön
@@ -96,18 +92,17 @@ export default function GaleriSayfasi() {
           <h1 className="text-2xl md:text-3xl text-white text-center font-medium" style={{ fontFamily: "'Playfair Display', serif" }}>
             Sinem & Harun Canlı Albüm
           </h1>
-          <span className="text-xs text-rose-300/80 font-light">Toplam: {fotograflar.length} Fotoğraf</span>
+          <span className="text-xs text-rose-300/80 font-light">Toplam: {photos.length} Fotoğraf</span>
         </div>
 
-        {/* Fotoğraf Grid Alanı */}
-        {fotograflar.length === 0 ? (
+        {photos.length === 0 ? (
           <div className="text-center py-20 space-y-4">
             <p className="text-rose-200/60 text-sm">Henüz bu klasörde fotoğraf bulunmuyor.</p>
             <Link href="/" className="inline-block bg-rose-600 text-white px-6 py-2.5 rounded-full text-sm font-medium">Ana Sayfadan Fotoğraf Yükle</Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {fotograflar.map((url, i) => (
+            {photos.map((url, i) => (
               <div key={i} className="relative aspect-square rounded-2xl overflow-hidden shadow-xl bg-white/5 border border-white/10 group">
                 <img 
                   src={url} 
