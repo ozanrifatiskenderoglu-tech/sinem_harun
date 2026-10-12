@@ -23,7 +23,10 @@ export default function GaleriSayfasi() {
     try {
       const stored = localStorage.getItem('sinem_harun_wedding_gallery');
       if (stored) {
-        setPhotos(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        // Sadece geçerli ve dolu URL'leri filtrele
+        const validPhotos = parsed.filter(url => typeof url === 'string' && url.startsWith('http'));
+        setPhotos(validPhotos);
       }
     } catch (e) {
       console.error("Fotoğraflar yüklenemedi:", e);
@@ -40,6 +43,12 @@ export default function GaleriSayfasi() {
       setErrorMsg(true);
       setPasswordInput('');
     }
+  };
+
+  const removeBrokenPhoto = (indexToRemove) => {
+    const updated = photos.filter((_, i) => i !== indexToRemove);
+    setPhotos(updated);
+    localStorage.setItem('sinem_harun_wedding_gallery', JSON.stringify(updated));
   };
 
   if (!isAuthenticated) {
@@ -97,7 +106,7 @@ export default function GaleriSayfasi() {
 
         {photos.length === 0 ? (
           <div className="text-center py-20 space-y-4">
-            <p className="text-rose-200/60 text-sm">Henüz bu klasörde fotoğraf bulunmuyor.</p>
+            <p className="text-rose-200/60 text-sm">Henüz bu cihazda kayıtlı fotoğraf bulunmuyor.</p>
             <Link href="/" className="inline-block bg-rose-600 text-white px-6 py-2.5 rounded-full text-sm font-medium">Ana Sayfadan Fotoğraf Yükle</Link>
           </div>
         ) : (
@@ -108,7 +117,19 @@ export default function GaleriSayfasi() {
                   src={url} 
                   alt="Sinem & Harun Nişan Fotoğrafı" 
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  onError={(e) => {
+                    // Resim yüklenemezse konsola yaz ve listeden temizle
+                    console.error("Yüklenemeyen fotoğraf URL'si:", url);
+                    e.target.style.display = 'none';
+                  }}
                 />
+                <button 
+                  onClick={() => removeBrokenPhoto(i)}
+                  className="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition shadow"
+                  title="Hatalı Fotoğrafı Kaldır"
+                >
+                  Sil
+                </button>
               </div>
             ))}
           </div>
