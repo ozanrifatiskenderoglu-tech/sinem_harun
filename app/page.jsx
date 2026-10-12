@@ -13,7 +13,6 @@ export default function AnaSayfa() {
   const ADMIN_PASS = "171026";
 
   useEffect(() => {
-    // Cloudinary widget script yüklemesi
     if (!document.getElementById('cloudinary-widget-script')) {
       const script = document.createElement('script');
       script.id = 'cloudinary-widget-script';
@@ -34,8 +33,6 @@ export default function AnaSayfa() {
       }, (error, result) => {
         if (!error && result && result.event === "success") {
           const newUrl = result.info.secure_url;
-          
-          // LocalStorage'a da kaydedelim ki galeri sayfasında anında görünsün
           try {
             const stored = localStorage.getItem('sinem_harun_wedding_gallery');
             let photos = stored ? JSON.parse(stored) : [];
@@ -53,9 +50,10 @@ export default function AnaSayfa() {
 
   const verifyAdmin = () => {
     if (adminPassword === ADMIN_PASS) {
+      // Oturum anahtarını kaydet (Tarayıcı açık olduğu sürece geçerli)
+      sessionStorage.setItem('is_admin_logged', 'true');
       setAdminPassword('');
       setIsAdminModalOpen(false);
-      // Şifre doğruysa doğrudan galeri sayfasına yönlendir
       router.push('/galeri');
     } else {
       alert("Hatalı şifre!");
@@ -72,7 +70,6 @@ export default function AnaSayfa() {
           <span className="text-xs uppercase tracking-widest text-rose-200/70 font-light">Anı Albümü</span>
         </div>
         <div className="flex items-center gap-2">
-          {/* Kilit Butonu - Tıklayınca Şifre Sorar, Bilinirse Galeriye Atar */}
           <button 
             onClick={() => setIsAdminModalOpen(true)} 
             className="p-2.5 text-rose-200/80 hover:text-white transition rounded-full hover:bg-white/10 flex items-center gap-1.5 text-xs bg-white/5 border border-white/10 cursor-pointer" 
@@ -107,7 +104,6 @@ export default function AnaSayfa() {
         <div className="text-[11px] opacity-80">Created by <a href="https://instagram.com/ori.bilisim" target="_blank" className="font-semibold underline hover:text-white transition">ori.bilisim 🤍</a></div>
       </footer>
 
-      {/* Şifre Giriş Modalı */}
       {isAdminModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
           <div className="rounded-2xl p-6 w-full max-w-xs space-y-4 shadow-2xl relative border border-white/20" style={{ background: 'rgba(20, 5, 10, 0.95)', backdropFilter: 'blur(16px)' }}>
