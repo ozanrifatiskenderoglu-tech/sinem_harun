@@ -85,7 +85,7 @@ export default function AnaSayfa() {
       setIsAdmin(true);
       setIsAdminModalOpen(false);
       setAdminPassword('');
-      fetchPhotos(); // Giriş yapınca güncel fotoğrafları çek
+      fetchPhotos();
     } else {
       alert("Hatalı şifre!");
     }
@@ -152,8 +152,7 @@ export default function AnaSayfa() {
           <span className="text-xs uppercase tracking-widest text-rose-200/70 font-light">Anı Albümü</span>
         </div>
         <div className="flex items-center gap-2">
-          {/* Bulut Galeriye Git / Kilit Butonu - Tıklayınca Şifre Sorar */}
-          <button onClick={() => setIsAdminModalOpen(true)} className="text-xs bg-white/10 hover:bg-white/20 px-3.5 py-1.5 rounded-full transition text-rose-200 shadow-sm flex items-center gap-1.5">
+          <button onClick={() => setIsAdminModalOpen(true)} className="p-2.5 text-rose-200/80 hover:text-white transition rounded-full hover:bg-white/10 flex items-center gap-1.5 text-xs bg-white/5 border border-white/10" title="Bulut Galeriye Git / Yönetici Girişi">
             <span>🔒</span>
             <span>Bulut Galeriye Git</span>
           </button>
@@ -177,12 +176,12 @@ export default function AnaSayfa() {
           </div>
         </div>
 
-        {/* Şifre Girilmeden Önce Görünmez / Şifre Girilince Fotoğraflar ve Yönetim Paneli Açılır */}
+        {/* Şifre Doğru Girilirse Açılacak Alan (Fotoğraflar ve Yönetim Paneli) */}
         {isAdmin && (
           <section className="space-y-6 pt-4">
             <div className="flex flex-wrap items-center justify-between border-b border-rose-900/40 pb-3 gap-2">
               <h2 className="text-lg text-rose-200 flex items-center gap-2" style={{ fontFamily: "'Playfair Display', serif" }}>
-                Yönetici Paneli & Bulut Galeri ({photos.length} Fotoğraf)
+                Bulut Galeri & Yönetim Paneli ({photos.length} Fotoğraf)
               </h2>
               <div className="flex items-center gap-2">
                 <button onClick={toggleSelectAll} className="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition text-rose-200">
@@ -223,7 +222,7 @@ export default function AnaSayfa() {
           <div className="rounded-2xl p-6 w-full max-w-xs space-y-4 shadow-2xl relative border border-white/20" style={{ background: 'rgba(20, 5, 10, 0.95)', backdropFilter: 'blur(16px)' }}>
             <button onClick={() => setIsAdminModalOpen(false)} className="absolute top-4 right-4 text-rose-200/60 hover:text-white">✕</button>
             <h3 className="text-lg text-center text-white" style={{ fontFamily: "'Playfair Display', serif" }}>Yönetici Girişi</h3>
-            <input type="password" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} placeholder="Şifre" className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py.5 text-white placeholder-rose-200/40 focus:outline-none focus:border-rose-400 text-center text-sm" />
+            <input type="password" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} placeholder="Şifre" className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-rose-200/40 focus:outline-none focus:border-rose-400 text-center text-sm" />
             <button onClick={verifyAdmin} className="w-full bg-rose-600 hover:bg-rose-500 text-white font-medium py-2.5 rounded-xl transition text-sm">Giriş Yap</button>
           </div>
         </div>
