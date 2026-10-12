@@ -15,31 +15,8 @@ export default function AnaSayfa() {
   const UPLOAD_PRESET = "SINEM_HARUN";
   const ADMIN_PASS = "171026";
 
-  const fetchPhotos = async () => {
-    try {
-      const stored = localStorage.getItem('sinem_harun_wedding_gallery');
-      let localPhotos = stored ? JSON.parse(stored) : [];
-
-      const res = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/${UPLOAD_PRESET}.json`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.resources) {
-          const cloudPhotos = data.resources.map(file => 
-            `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/v${file.version}/${file.public_id}.${file.format}`
-          );
-          const combined = Array.from(new Set([...cloudPhotos, ...localPhotos]));
-          setPhotos(combined);
-          return;
-        }
-      }
-      setPhotos(localPhotos);
-    } catch (e) {
-      const stored = localStorage.getItem('sinem_harun_wedding_gallery');
-      if (stored) setPhotos(JSON.parse(stored));
-    }
-  };
-
   useEffect(() => {
+    // Cloudinary widget script yüklemesi
     if (!document.getElementById('cloudinary-widget-script')) {
       const script = document.createElement('script');
       script.id = 'cloudinary-widget-script';
@@ -47,7 +24,16 @@ export default function AnaSayfa() {
       script.async = true;
       document.body.appendChild(script);
     }
-    fetchPhotos();
+
+    // LocalStorage'dan kayıtlı fotoğrafları yükle
+    try {
+      const stored = localStorage.getItem('sinem_harun_wedding_gallery');
+      if (stored) {
+        setPhotos(JSON.parse(stored));
+      }
+    } catch (e) {
+      console.error("Fotoğraflar yüklenirken hata oluştu:", e);
+    }
   }, []);
 
   const saveStoredPhotos = (p) => {
@@ -85,7 +71,6 @@ export default function AnaSayfa() {
       setIsAdmin(true);
       setIsAdminModalOpen(false);
       setAdminPassword('');
-      fetchPhotos();
     } else {
       alert("Hatalı şifre!");
     }
@@ -176,7 +161,7 @@ export default function AnaSayfa() {
           </div>
         </div>
 
-        {/* Şifre Doğru Girilirse Açılacak Alan (Fotoğraflar ve Yönetim Paneli) */}
+        {/* Şifre Girilince Açılan Bulut Galeri ve Yönetim Paneli */}
         {isAdmin && (
           <section className="space-y-6 pt-4">
             <div className="flex flex-wrap items-center justify-between border-b border-rose-900/40 pb-3 gap-2">
