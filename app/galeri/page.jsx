@@ -4,71 +4,49 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function GaleriSayfasi() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [photos, setPhotos] = useState([]);
   const [selectedIndices, setSelectedIndices] = useState(new Set());
   const [lightboxImg, setLightboxImg] = useState(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [directPassword, setDirectPassword] = useState('');
 
   const CLOUD_NAME = "qlxdd0ki";
   const UPLOAD_PRESET = "SINEM_HARUN";
-  const ADMIN_PASS = "171026";
-
-  const fetchPhotosFromCloudinary = async () => {
-    setLoading(true);
-    let localPhotos = [];
-    try {
-      const stored = localStorage.getItem('sinem_harun_wedding_gallery');
-      if (stored) localPhotos = JSON.parse(stored);
-    } catch (e) {}
-
-    try {
-      // Cloudinary tag/list endpoint'inden fotoğrafları çekme dene
-      const res = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/${UPLOAD_PRESET}.json`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.resources) {
-          const cloudPhotos = data.resources.map(file => 
-            `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/v${file.version}/${file.public_id}.${file.format}`
-          );
-          const combined = Array.from(new Set([...cloudPhotos, ...localPhotos]));
-          setPhotos(combined);
-          localStorage.setItem('sinem_harun_wedding_gallery', JSON.stringify(combined));
-          setLoading(false);
-          return;
-        }
-      }
-    } catch (err) {
-      console.log("Cloudinary list servisine ulaşılamadı, yerel hafızadan yükleniyor.");
-    }
-
-    setPhotos(localPhotos);
-    setLoading(false);
-  };
 
   useEffect(() => {
-    const auth = sessionStorage.getItem('is_admin_logged');
-    if (auth === 'true') {
-      setIsAuthenticated(true);
-      fetchPhotosFromCloudinary();
-    } else {
-      setLoading(false);
-    }
-  }, []);
+    const fetchPhotos = async () => {
+      setLoading(true);
+      let localPhotos = [];
+      try {
+        const stored = localStorage.getItem('sinem_harun_wedding_gallery');
+        if (stored) localPhotos = JSON.parse(stored);
+      } catch (e) {}
 
-  const handleDirectLogin = (e) => {
-    e.preventDefault();
-    if (directPassword === ADMIN_PASS) {
-      sessionStorage.setItem('is_admin_logged', 'true');
-      setIsAuthenticated(true);
-      fetchPhotosFromCloudinary();
-    } else {
-      alert("Hatalı şifre!");
-      setDirectPassword('');
-    }
-  };
+      try {
+        const res = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/${UPLOAD_PRESET}.json`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.resources) {
+            const cloudPhotos = data.resources.map(file => 
+              `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/v${file.version}/${file.public_id}.${file.format}`
+            );
+            const combined = Array.from(new Set([...cloudPhotos, ...localPhotos]));
+            setPhotos(combined);
+            localStorage.setItem('sinem_harun_wedding_gallery', JSON.stringify(combined));
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.log("Cloudinary list servisi atlandı, yerel veriler kullanılıyor.");
+      }
+
+      setPhotos(localPhotos);
+      setLoading(false);
+    };
+
+    fetchPhotos();
+  }, []);
 
   const saveStoredPhotos = (p) => {
     setPhotos(p);
@@ -126,38 +104,6 @@ export default function GaleriSayfasi() {
     alert(`${count} fotoğraf başarıyla indirildi!`);
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen text-rose-50 flex flex-col items-center justify-center relative overflow-x-hidden p-4" style={{ background: 'linear-gradient(135deg, #1a050b 0%, #2b0914 50%, #150308 100%)' }}>
-        <div className="rounded-2xl p-8 w-full max-w-sm space-y-6 shadow-2xl relative border border-white/20 text-center" style={{ background: 'rgba(20, 5, 10, 0.95)', backdropFilter: 'blur(16px)' }}>
-          <div className="space-y-2">
-            <span className="text-2xl">🔒</span>
-            <h1 className="text-xl text-white font-medium" style={{ fontFamily: "'Playfair Display', serif" }}>Yetkili Girişi Gerekli</h1>
-            <p className="text-xs text-rose-200/70">Bu sayfayı görüntülemek için yönetici şifresini girmeniz gerekmektedir.</p>
-          </div>
-          <form onSubmit={handleDirectLogin} className="space-y-4">
-            <input 
-              type="password" 
-              value={directPassword} 
-              onChange={(e) => setDirectPassword(e.target.value)} 
-              placeholder="Yönetici Şifresi" 
-              className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-rose-200/40 focus:outline-none focus:border-rose-400 text-center text-sm" 
-              autoFocus
-            />
-            <button type="submit" className="w-full bg-rose-600 hover:bg-rose-500 text-white font-medium py-3 rounded-xl transition text-sm cursor-pointer shadow-lg">
-              Giriş Yap
-            </button>
-          </form>
-          <div>
-            <Link href="/" className="text-xs text-rose-300/70 hover:text-white underline transition">
-              ← Ana Sayfaya Dön
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen text-rose-50 flex flex-col justify-between relative overflow-x-hidden" style={{ background: 'linear-gradient(135deg, #1a050b 0%, #2b0914 50%, #150308 100%)' }}>
       <div className="fixed -top-32 -left-32 w-96 h-96 bg-rose-900/20 rounded-full blur-3xl pointer-events-none"></div>
@@ -181,7 +127,7 @@ export default function GaleriSayfasi() {
               Yönetici Paneli & Fotoğraflar
             </h1>
             <p className="text-xs text-rose-200/70 mt-1">
-              {loading ? 'Fotoğraflar yükleniyor...' : `Toplam ${photos.length} fotoğraf yüklendi.`}
+              {loading ? 'Yükleniyor...' : `Toplam ${photos.length} fotoğraf bulundu.`}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -202,11 +148,11 @@ export default function GaleriSayfasi() {
 
         {loading ? (
           <div className="text-center py-20">
-            <p className="text-rose-200/60 text-sm">Buluttan fotoğraflar getiriliyor...</p>
+            <p className="text-rose-200/60 text-sm">Fotoğraflar getiriliyor...</p>
           </div>
         ) : photos.length === 0 ? (
           <div className="text-center py-20 space-y-3">
-            <p className="text-rose-200/60 text-sm">Henüz hiç fotoğraf yüklenmemiş veya fotoğraflar yükleniyor.</p>
+            <p className="text-rose-200/60 text-sm">Henüz hiç fotoğraf yüklenmemiş.</p>
             <Link href="/" className="inline-block text-xs bg-rose-600 text-white px-4 py-2 rounded-lg">Ana Sayfadan Fotoğraf Yükle</Link>
           </div>
         ) : (
