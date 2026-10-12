@@ -1,8 +1,6 @@
-// TEST
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 
 export default function AnaSayfa() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -17,8 +15,31 @@ export default function AnaSayfa() {
   const UPLOAD_PRESET = "SINEM_HARUN";
   const ADMIN_PASS = "171026";
 
+  const fetchPhotos = async () => {
+    try {
+      const stored = localStorage.getItem('sinem_harun_wedding_gallery');
+      let localPhotos = stored ? JSON.parse(stored) : [];
+
+      const res = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/${UPLOAD_PRESET}.json`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.resources) {
+          const cloudPhotos = data.resources.map(file => 
+            `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/v${file.version}/${file.public_id}.${file.format}`
+          );
+          const combined = Array.from(new Set([...cloudPhotos, ...localPhotos]));
+          setPhotos(combined);
+          return;
+        }
+      }
+      setPhotos(localPhotos);
+    } catch (e) {
+      const stored = localStorage.getItem('sinem_harun_wedding_gallery');
+      if (stored) setPhotos(JSON.parse(stored));
+    }
+  };
+
   useEffect(() => {
-    // Cloudinary Upload Widget script yüklemesi
     if (!document.getElementById('cloudinary-widget-script')) {
       const script = document.createElement('script');
       script.id = 'cloudinary-widget-script';
@@ -26,11 +47,7 @@ export default function AnaSayfa() {
       script.async = true;
       document.body.appendChild(script);
     }
-
-    try {
-      const stored = localStorage.getItem('sinem_harun_wedding_gallery');
-      if (stored) setPhotos(JSON.parse(stored));
-    } catch (e) {}
+    fetchPhotos();
   }, []);
 
   const saveStoredPhotos = (p) => {
@@ -68,6 +85,7 @@ export default function AnaSayfa() {
       setIsAdmin(true);
       setIsAdminModalOpen(false);
       setAdminPassword('');
+      fetchPhotos(); // Giriş yapınca güncel fotoğrafları çek
     } else {
       alert("Hatalı şifre!");
     }
@@ -97,7 +115,6 @@ export default function AnaSayfa() {
     }
   };
 
-  // Toplu İndirme Fonksiyonu
   const downloadSelected = async () => {
     if (selectedIndices.size === 0) return;
     setIsDownloading(true);
@@ -135,11 +152,10 @@ export default function AnaSayfa() {
           <span className="text-xs uppercase tracking-widest text-rose-200/70 font-light">Anı Albümü</span>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/galeri" className="text-xs bg-white/10 hover:bg-white/20 px-3.5 py-1.5 rounded-full transition text-rose-200 shadow-sm">
-             🔒
-          </Link>
-          <button onClick={() => setIsAdminModalOpen(true)} className="p-2 text-rose-200/60 hover:text-rose-100 transition rounded-full hover:bg-white/5" title="Yönetici Girişi">
-            🔒
+          {/* Bulut Galeriye Git / Kilit Butonu - Tıklayınca Şifre Sorar */}
+          <button onClick={() => setIsAdminModalOpen(true)} className="text-xs bg-white/10 hover:bg-white/20 px-3.5 py-1.5 rounded-full transition text-rose-200 shadow-sm flex items-center gap-1.5">
+            <span>🔒</span>
+            <span>Bulut Galeriye Git</span>
           </button>
         </div>
       </header>
@@ -161,12 +177,12 @@ export default function AnaSayfa() {
           </div>
         </div>
 
-        {/* Yönetici Paneli (Şifre Girilince Görünür) */}
+        {/* Şifre Girilmeden Önce Görünmez / Şifre Girilince Fotoğraflar ve Yönetim Paneli Açılır */}
         {isAdmin && (
-          <section className="space-y-4">
+          <section className="space-y-6 pt-4">
             <div className="flex flex-wrap items-center justify-between border-b border-rose-900/40 pb-3 gap-2">
-              <h2 className="text-lg text-white flex items-center gap-2" style={{ fontFamily: "'Playfair Display', serif" }}>
-                Yönetici Albümü ({photos.length})
+              <h2 className="text-lg text-rose-200 flex items-center gap-2" style={{ fontFamily: "'Playfair Display', serif" }}>
+                Yönetici Paneli & Bulut Galeri ({photos.length} Fotoğraf)
               </h2>
               <div className="flex items-center gap-2">
                 <button onClick={toggleSelectAll} className="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition text-rose-200">
@@ -179,13 +195,14 @@ export default function AnaSayfa() {
                 )}
               </div>
             </div>
+
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
               {photos.map((url, i) => {
                 const isChecked = selectedIndices.has(i);
                 return (
                   <div key={i} className={`group relative aspect-square rounded-2xl overflow-hidden shadow-md border ${isChecked ? 'border-rose-500 ring-2 ring-rose-500' : 'border-transparent'}`} style={{ background: 'rgba(255, 255, 255, 0.05)' }}>
                     <input type="checkbox" checked={isChecked} onChange={() => toggleSelectPhoto(i)} className="absolute top-2 left-2 z-20 w-5 h-5 accent-rose-600 cursor-pointer" />
-                    <img src={url} alt="Yüklenen fotoğraf" className="w-full h-full object-cover group-hover:scale-105 transition duration-500 cursor-pointer" onClick={() => setLightboxImg(url)} />
+                    <img src={url} alt="Albüm Fotoğrafı" className="w-full h-full object-cover group-hover:scale-105 transition duration-500 cursor-pointer" onClick={() => setLightboxImg(url)} />
                     <button onClick={() => deletePhoto(i)} className="absolute top-2 right-2 z-25 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded-full shadow-lg transition" title="Sil">🗑️</button>
                   </div>
                 );
@@ -200,13 +217,13 @@ export default function AnaSayfa() {
         <div className="text-[11px] opacity-80">Created by <a href="https://instagram.com/ori.bilisim" target="_blank" className="font-semibold underline hover:text-white transition">ori.bilisim 🤍</a></div>
       </footer>
 
-      {/* Yönetici Giriş Modalı */}
+      {/* Şifre Giriş Modalı */}
       {isAdminModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
           <div className="rounded-2xl p-6 w-full max-w-xs space-y-4 shadow-2xl relative border border-white/20" style={{ background: 'rgba(20, 5, 10, 0.95)', backdropFilter: 'blur(16px)' }}>
             <button onClick={() => setIsAdminModalOpen(false)} className="absolute top-4 right-4 text-rose-200/60 hover:text-white">✕</button>
             <h3 className="text-lg text-center text-white" style={{ fontFamily: "'Playfair Display', serif" }}>Yönetici Girişi</h3>
-            <input type="password" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} placeholder="Şifre" className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-rose-200/40 focus:outline-none focus:border-rose-400 text-center text-sm" />
+            <input type="password" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} placeholder="Şifre" className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py.5 text-white placeholder-rose-200/40 focus:outline-none focus:border-rose-400 text-center text-sm" />
             <button onClick={verifyAdmin} className="w-full bg-rose-600 hover:bg-rose-500 text-white font-medium py-2.5 rounded-xl transition text-sm">Giriş Yap</button>
           </div>
         </div>
