@@ -9,35 +9,61 @@ export default function GaleriSayfasi() {
   const [selectedIndices, setSelectedIndices] = useState(new Set());
   const [lightboxImg, setLightboxImg] = useState(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [directPassword, setDirectPassword] = useState('');
 
+  const CLOUD_NAME = "qlxdd0ki";
+  const UPLOAD_PRESET = "SINEM_HARUN";
   const ADMIN_PASS = "171026";
 
-  useEffect(() => {
-    const auth = localStorage.getItem('sinem_harun_is_admin');
-    if (auth === 'true') {
-      setIsAuthenticated(true);
-      loadPhotos();
-    }
-  }, []);
-
-  const loadPhotos = () => {
+  const fetchPhotosFromCloudinary = async () => {
+    setLoading(true);
+    let localPhotos = [];
     try {
       const stored = localStorage.getItem('sinem_harun_wedding_gallery');
-      if (stored) {
-        setPhotos(JSON.parse(stored));
+      if (stored) localPhotos = JSON.parse(stored);
+    } catch (e) {}
+
+    try {
+      // Cloudinary tag/list endpoint'inden fotoğrafları çekme dene
+      const res = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/${UPLOAD_PRESET}.json`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.resources) {
+          const cloudPhotos = data.resources.map(file => 
+            `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/v${file.version}/${file.public_id}.${file.format}`
+          );
+          const combined = Array.from(new Set([...cloudPhotos, ...localPhotos]));
+          setPhotos(combined);
+          localStorage.setItem('sinem_harun_wedding_gallery', JSON.stringify(combined));
+          setLoading(false);
+          return;
+        }
       }
-    } catch (e) {
-      console.error("Fotoğraflar yüklenemedi:", e);
+    } catch (err) {
+      console.log("Cloudinary list servisine ulaşılamadı, yerel hafızadan yükleniyor.");
     }
+
+    setPhotos(localPhotos);
+    setLoading(false);
   };
+
+  useEffect(() => {
+    const auth = sessionStorage.getItem('is_admin_logged');
+    if (auth === 'true') {
+      setIsAuthenticated(true);
+      fetchPhotosFromCloudinary();
+    } else {
+      setLoading(false);
+    }
+  }, []);
 
   const handleDirectLogin = (e) => {
     e.preventDefault();
     if (directPassword === ADMIN_PASS) {
-      localStorage.setItem('sinem_harun_is_admin', 'true');
+      sessionStorage.setItem('is_admin_logged', 'true');
       setIsAuthenticated(true);
-      loadPhotos();
+      fetchPhotosFromCloudinary();
     } else {
       alert("Hatalı şifre!");
       setDirectPassword('');
@@ -154,7 +180,9 @@ export default function GaleriSayfasi() {
             <h1 className="text-2xl text-white font-medium" style={{ fontFamily: "'Playfair Display', serif" }}>
               Yönetici Paneli & Fotoğraflar
             </h1>
-            <p className="text-xs text-rose-200/70 mt-1">Toplam {photos.length} fotoğraf yüklendi.</p>
+            <p className="text-xs text-rose-200/70 mt-1">
+              {loading ? 'Fotoğraflar yükleniyor...' : `Toplam ${photos.length} fotoğraf yüklendi.`}
+            </p>
           </div>
           <div className="flex items-center gap-2">
             {photos.length > 0 && (
@@ -172,9 +200,13 @@ export default function GaleriSayfasi() {
           </div>
         </div>
 
-        {photos.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-20">
+            <p className="text-rose-200/60 text-sm">Buluttan fotoğraflar getiriliyor...</p>
+          </div>
+        ) : photos.length === 0 ? (
           <div className="text-center py-20 space-y-3">
-            <p className="text-rose-200/60 text-sm">Henüz hiç fotoğraf yüklenmemiş.</p>
+            <p className="text-rose-200/60 text-sm">Henüz hiç fotoğraf yüklenmemiş veya fotoğraflar yükleniyor.</p>
             <Link href="/" className="inline-block text-xs bg-rose-600 text-white px-4 py-2 rounded-lg">Ana Sayfadan Fotoğraf Yükle</Link>
           </div>
         ) : (
