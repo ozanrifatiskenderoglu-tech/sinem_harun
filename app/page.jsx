@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 export default function AnaSayfa() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -16,7 +17,6 @@ export default function AnaSayfa() {
   const ADMIN_PASS = "171026";
 
   useEffect(() => {
-    // Cloudinary widget script yüklemesi
     if (!document.getElementById('cloudinary-widget-script')) {
       const script = document.createElement('script');
       script.id = 'cloudinary-widget-script';
@@ -25,15 +25,10 @@ export default function AnaSayfa() {
       document.body.appendChild(script);
     }
 
-    // LocalStorage'dan kayıtlı fotoğrafları yükle
     try {
       const stored = localStorage.getItem('sinem_harun_wedding_gallery');
-      if (stored) {
-        setPhotos(JSON.parse(stored));
-      }
-    } catch (e) {
-      console.error("Fotoğraflar yüklenirken hata oluştu:", e);
-    }
+      if (stored) setPhotos(JSON.parse(stored));
+    } catch (e) {}
   }, []);
 
   const saveStoredPhotos = (p) => {
@@ -137,9 +132,13 @@ export default function AnaSayfa() {
           <span className="text-xs uppercase tracking-widest text-rose-200/70 font-light">Anı Albümü</span>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setIsAdminModalOpen(true)} className="p-2.5 text-rose-200/80 hover:text-white transition rounded-full hover:bg-white/10 flex items-center gap-1.5 text-xs bg-white/5 border border-white/10" title="Bulut Galeriye Git / Yönetici Girişi">
-            <span>🔒</span>
-            <span>Bulut Galeriye Git</span>
+          {/* Bulut Galeriye Git Butonu (Şifre istemez, direkt galeriye götürür) */}
+          <Link href="/galeri" className="text-xs bg-white/10 hover:bg-white/20 px-3.5 py-1.5 rounded-full transition text-rose-200 shadow-sm">
+            Bulut Galeriye Git →
+          </Link>
+          {/* Kilit Butonu (Sadece yönetici girişi için şifre sorar) */}
+          <button onClick={() => setIsAdminModalOpen(true)} className="p-2 text-rose-200/60 hover:text-rose-100 transition rounded-full hover:bg-white/5" title="Yönetici Girişi">
+            🔒
           </button>
         </div>
       </header>
@@ -161,12 +160,12 @@ export default function AnaSayfa() {
           </div>
         </div>
 
-        {/* Şifre Girilince Açılan Bulut Galeri ve Yönetim Paneli */}
+        {/* Yönetici Paneli (Sadece kilit simgesinden doğru şifre girilince açılır) */}
         {isAdmin && (
-          <section className="space-y-6 pt-4">
+          <section className="space-y-4 pt-4 border-t border-rose-500/30">
             <div className="flex flex-wrap items-center justify-between border-b border-rose-900/40 pb-3 gap-2">
               <h2 className="text-lg text-rose-200 flex items-center gap-2" style={{ fontFamily: "'Playfair Display', serif" }}>
-                Bulut Galeri & Yönetim Paneli ({photos.length} Fotoğraf)
+                ⚙️ Yönetici Albüm Yönetimi ({photos.length} Fotoğraf)
               </h2>
               <div className="flex items-center gap-2">
                 <button onClick={toggleSelectAll} className="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition text-rose-200">
@@ -179,14 +178,13 @@ export default function AnaSayfa() {
                 )}
               </div>
             </div>
-
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
               {photos.map((url, i) => {
                 const isChecked = selectedIndices.has(i);
                 return (
                   <div key={i} className={`group relative aspect-square rounded-2xl overflow-hidden shadow-md border ${isChecked ? 'border-rose-500 ring-2 ring-rose-500' : 'border-transparent'}`} style={{ background: 'rgba(255, 255, 255, 0.05)' }}>
                     <input type="checkbox" checked={isChecked} onChange={() => toggleSelectPhoto(i)} className="absolute top-2 left-2 z-20 w-5 h-5 accent-rose-600 cursor-pointer" />
-                    <img src={url} alt="Albüm Fotoğrafı" className="w-full h-full object-cover group-hover:scale-105 transition duration-500 cursor-pointer" onClick={() => setLightboxImg(url)} />
+                    <img src={url} alt="Yüklenen fotoğraf" className="w-full h-full object-cover group-hover:scale-105 transition duration-500 cursor-pointer" onClick={() => setLightboxImg(url)} />
                     <button onClick={() => deletePhoto(i)} className="absolute top-2 right-2 z-25 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded-full shadow-lg transition" title="Sil">🗑️</button>
                   </div>
                 );
@@ -201,7 +199,7 @@ export default function AnaSayfa() {
         <div className="text-[11px] opacity-80">Created by <a href="https://instagram.com/ori.bilisim" target="_blank" className="font-semibold underline hover:text-white transition">ori.bilisim 🤍</a></div>
       </footer>
 
-      {/* Şifre Giriş Modalı */}
+      {/* Yönetici Giriş Modalı */}
       {isAdminModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
           <div className="rounded-2xl p-6 w-full max-w-xs space-y-4 shadow-2xl relative border border-white/20" style={{ background: 'rgba(20, 5, 10, 0.95)', backdropFilter: 'blur(16px)' }}>
