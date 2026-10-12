@@ -136,7 +136,7 @@ export default function AnaSayfa() {
         </div>
         <div className="flex items-center gap-2">
           <Link href="/galeri" className="text-xs bg-white/10 hover:bg-white/20 px-3.5 py-1.5 rounded-full transition text-rose-200 shadow-sm">
-            Bulut Galeriye Git →
+             🔒
           </Link>
           <button onClick={() => setIsAdminModalOpen(true)} className="p-2 text-rose-200/60 hover:text-rose-100 transition rounded-full hover:bg-white/5" title="Yönetici Girişi">
             🔒
