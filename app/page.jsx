@@ -50,8 +50,7 @@ export default function AnaSayfa() {
 
   const verifyAdmin = () => {
     if (adminPassword === ADMIN_PASS) {
-      // Oturum anahtarını kaydet (Tarayıcı açık olduğu sürece geçerli)
-      sessionStorage.setItem('is_admin_logged', 'true');
+      localStorage.setItem('sinem_harun_is_admin', 'true');
       setAdminPassword('');
       setIsAdminModalOpen(false);
       router.push('/galeri');
