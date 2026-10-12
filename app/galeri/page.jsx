@@ -6,31 +6,57 @@ import Link from 'next/link';
 export default function GaleriSayfasi() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [photos, setPhotos] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [passwordInput, setPasswordInput] = useState('');
   const [errorMsg, setErrorMsg] = useState(false);
+  const [lightboxImg, setLightboxImg] = useState(null);
 
   const ADMIN_PASS = "171026";
+  const CLOUD_NAME = "qlxdd0ki";
+  const UPLOAD_PRESET = "SINEM_HARUN";
 
   useEffect(() => {
     const auth = sessionStorage.getItem('is_admin_logged');
     if (auth === 'true') {
       setIsAuthenticated(true);
-      loadPhotos();
+      fetchCloudinaryPhotos();
+    } else {
+      setLoading(false);
     }
   }, []);
 
-  const loadPhotos = () => {
+  const fetchCloudinaryPhotos = async () => {
+    setLoading(true);
+    let allPhotos = [];
+
+    // 1. Önce localStorage'daki fotoğrafları al (Anlık görünürlük için)
     try {
       const stored = localStorage.getItem('sinem_harun_wedding_gallery');
       if (stored) {
         const parsed = JSON.parse(stored);
-        // Sadece geçerli ve dolu URL'leri filtrele
-        const validPhotos = parsed.filter(url => typeof url === 'string' && url.startsWith('http'));
-        setPhotos(validPhotos);
+        if (Array.isArray(parsed)) allPhotos = [...parsed];
       }
-    } catch (e) {
-      console.error("Fotoğraflar yüklenemedi:", e);
+    } catch (e) {}
+
+    // 2. Cloudinary bulutundan güncel listeyi çekmeyi dene
+    try {
+      const res = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/${UPLOAD_PRESET}.json`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.resources) {
+          const cloudPhotos = data.resources.map(file => 
+            `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/v${file.version}/${file.public_id}.${file.format}`
+          );
+          // İkisini birleştir ve tekrarı önle
+          allPhotos = Array.from(new Set([...cloudPhotos, ...allPhotos]));
+        }
+      }
+    } catch (err) {
+      console.log("Bulut listesi alınamadı, yerel veriler kullanılıyor.");
     }
+
+    setPhotos(allPhotos);
+    setLoading(false);
   };
 
   const handleLogin = (e) => {
@@ -38,17 +64,19 @@ export default function GaleriSayfasi() {
     if (passwordInput === ADMIN_PASS) {
       sessionStorage.setItem('is_admin_logged', 'true');
       setIsAuthenticated(true);
-      loadPhotos();
+      fetchCloudinaryPhotos();
     } else {
       setErrorMsg(true);
       setPasswordInput('');
     }
   };
 
-  const removeBrokenPhoto = (indexToRemove) => {
-    const updated = photos.filter((_, i) => i !== indexToRemove);
-    setPhotos(updated);
-    localStorage.setItem('sinem_harun_wedding_gallery', JSON.stringify(updated));
+  const deletePhoto = (indexToRemove) => {
+    if (confirm("Bu fotoğrafı galeriden kaldırmak istediğinize emin misiniz?")) {
+      const updated = photos.filter((_, i) => i !== indexToRemove);
+      setPhotos(updated);
+      localStorage.setItem('sinem_harun_wedding_gallery', JSON.stringify(updated));
+    }
   };
 
   if (!isAuthenticated) {
@@ -101,12 +129,18 @@ export default function GaleriSayfasi() {
           <h1 className="text-2xl md:text-3xl text-white text-center font-medium" style={{ fontFamily: "'Playfair Display', serif" }}>
             Sinem & Harun Canlı Albüm
           </h1>
-          <span className="text-xs text-rose-300/80 font-light">Toplam: {photos.length} Fotoğraf</span>
+          <span className="text-xs text-rose-300/80 font-light">
+            {loading ? 'Yükleniyor...' : `Toplam: ${photos.length} Fotoğraf`}
+          </span>
         </div>
 
-        {photos.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-20">
+            <p className="text-rose-200/60 text-sm">Fotoğraflar yükleniyor...</p>
+          </div>
+        ) : photos.length === 0 ? (
           <div className="text-center py-20 space-y-4">
-            <p className="text-rose-200/60 text-sm">Henüz bu cihazda kayıtlı fotoğraf bulunmuyor.</p>
+            <p className="text-rose-200/60 text-sm">Henüz hiç fotoğraf yüklenmemiş.</p>
             <Link href="/" className="inline-block bg-rose-600 text-white px-6 py-2.5 rounded-full text-sm font-medium">Ana Sayfadan Fotoğraf Yükle</Link>
           </div>
         ) : (
@@ -115,20 +149,19 @@ export default function GaleriSayfasi() {
               <div key={i} className="relative aspect-square rounded-2xl overflow-hidden shadow-xl bg-white/5 border border-white/10 group">
                 <img 
                   src={url} 
-                  alt="Sinem & Harun Nişan Fotoğrafı" 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  alt="Sinem & Harun Albüm Fotoğrafı" 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 cursor-pointer"
+                  onClick={() => setLightboxImg(url)}
                   onError={(e) => {
-                    // Resim yüklenemezse konsola yaz ve listeden temizle
-                    console.error("Yüklenemeyen fotoğraf URL'si:", url);
                     e.target.style.display = 'none';
                   }}
                 />
                 <button 
-                  onClick={() => removeBrokenPhoto(i)}
-                  className="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition shadow"
-                  title="Hatalı Fotoğrafı Kaldır"
+                  onClick={() => deletePhoto(i)}
+                  className="absolute top-2 right-2 bg-red-600/80 hover:bg-red-600 text-white text-xs px-2.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition shadow-lg cursor-pointer"
+                  title="Fotoğrafı Kaldır"
                 >
-                  Sil
+                  🗑️ Sil
                 </button>
               </div>
             ))}
@@ -139,6 +172,14 @@ export default function GaleriSayfasi() {
       <footer className="text-center text-xs text-rose-100/50 pt-10 font-light">
         Sinem & Harun • Canlı Fotoğraf Galerisi 🤍
       </footer>
+
+      {/* Büyük Boyut Gösterim Penceresi (Lightbox) */}
+      {lightboxImg && (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4" onClick={() => setLightboxImg(null)}>
+          <button className="absolute top-4 right-4 text-white/80 hover:text-white p-2 text-xl cursor-pointer">✕</button>
+          <img src={lightboxImg} alt="Büyük Boyut" className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
     </div>
   );
 }
