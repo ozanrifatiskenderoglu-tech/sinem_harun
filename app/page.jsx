@@ -40,7 +40,9 @@ export default function AnaSayfa() {
               photos.unshift(newUrl);
               localStorage.setItem('sinem_harun_wedding_gallery', JSON.stringify(photos));
             }
-          } catch (e) {}
+          } catch (e) {
+            console.error("Kayıt hatası:", e);
+          }
 
           alert("Fotoğrafınız başarıyla gönderildi! Teşekkür ederiz. ✨");
         }
