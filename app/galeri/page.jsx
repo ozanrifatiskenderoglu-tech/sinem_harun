@@ -4,145 +4,97 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function GaleriSayfasi() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [photos, setPhotos] = useState([]);
-  const [selectedIndices, setSelectedIndices] = useState(new Set());
   const [lightboxImg, setLightboxImg] = useState(null);
-  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
+    const auth = sessionStorage.getItem('is_admin_logged');
+    if (auth === 'true') {
+      setIsAuthenticated(true);
+      loadPhotos();
+    }
+  }, []);
+
+  const loadPhotos = () => {
     try {
       const stored = localStorage.getItem('sinem_harun_wedding_gallery');
       if (stored) {
-        setPhotos(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setPhotos(parsed);
+        }
       }
     } catch (e) {
       console.error("Fotoğraflar yüklenemedi:", e);
     }
-  }, []);
-
-  const saveStoredPhotos = (p) => {
-    setPhotos(p);
-    localStorage.setItem('sinem_harun_wedding_gallery', JSON.stringify(p));
   };
 
-  const toggleSelectPhoto = (i) => {
-    const newSelected = new Set(selectedIndices);
-    newSelected.has(i) ? newSelected.delete(i) : newSelected.add(i);
-    setSelectedIndices(newSelected);
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedIndices.size === photos.length) {
-      setSelectedIndices(new Set());
-    } else {
-      setSelectedIndices(new Set(photos.map((_, i) => i)));
-    }
-  };
-
-  const deletePhoto = (i) => {
+  const deletePhoto = (indexToRemove) => {
     if (confirm("Bu fotoğrafı silmek istediğinize emin misiniz?")) {
-      const updated = photos.filter((_, index) => index !== i);
-      saveStoredPhotos(updated);
-      const newSelected = new Set(selectedIndices);
-      newSelected.delete(i);
-      setSelectedIndices(newSelected);
+      const updated = photos.filter((_, i) => i !== indexToRemove);
+      setPhotos(updated);
+      localStorage.setItem('sinem_harun_wedding_gallery', JSON.stringify(updated));
     }
   };
 
-  const downloadSelected = async () => {
-    if (selectedIndices.size === 0) return;
-    setIsDownloading(true);
-    let count = 0;
-    for (const i of selectedIndices) {
-      const url = photos[i];
-      try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.download = `sinem-harun-${i + 1}.jpg`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(blobUrl);
-        count++;
-        await new Promise((r) => setTimeout(r, 300));
-      } catch (err) {
-        console.error("İndirme hatası:", err);
-      }
-    }
-    setIsDownloading(false);
-    alert(`${count} fotoğraf başarıyla indirildi!`);
-  };
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen text-rose-50 flex flex-col items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #1a050b 0%, #2b0914 50%, #150308 100%)' }}>
+        <div className="rounded-2xl p-8 w-full max-w-sm space-y-6 text-center border border-white/20" style={{ background: 'rgba(20, 5, 10, 0.95)', backdropFilter: 'blur(16px)' }}>
+          <h1 className="text-xl text-white font-medium" style={{ fontFamily: "'Playfair Display', serif" }}>Yetki Gerekli</h1>
+          <p className="text-xs text-rose-200/70">Lütfen ana sayfadaki butondan şifre girerek giriş yapın.</p>
+          <Link href="/" className="inline-block bg-rose-600 text-white px-6 py-2.5 rounded-xl text-sm font-medium">Ana Sayfaya Dön</Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen text-rose-50 flex flex-col justify-between relative overflow-x-hidden" style={{ background: 'linear-gradient(135deg, #1a050b 0%, #2b0914 50%, #150308 100%)' }}>
-      <div className="fixed -top-32 -left-32 w-96 h-96 bg-rose-900/20 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="fixed -bottom-32 -right-32 w-96 h-96 bg-amber-900/20 rounded-full blur-3xl pointer-events-none"></div>
-
-      <header className="p-4 flex justify-between items-center relative z-20 container mx-auto max-w-4xl border-b border-rose-900/30">
-        <div className="flex items-center space-x-2">
-          <span className="text-xs uppercase tracking-widest text-rose-200/70 font-light">Bulut Galeri & Yönetim</span>
-        </div>
-        <div>
-          <Link href="/" className="text-xs bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full transition text-rose-200 shadow-sm">
+    <div className="min-h-screen text-rose-50 flex flex-col justify-between p-6 md:p-12" style={{ background: 'linear-gradient(135deg, #1a050b 0%, #2b0914 50%, #150308 100%)' }}>
+      <div className="max-w-6xl mx-auto w-full space-y-8 flex-grow">
+        
+        <div className="flex justify-between items-center border-b border-rose-900/40 pb-4">
+          <Link href="/" className="text-xs bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl transition text-rose-200">
             ← Ana Sayfaya Dön
           </Link>
-        </div>
-      </header>
-
-      <main className="container mx-auto max-w-4xl px-4 py-8 relative z-10 space-y-6 flex-grow">
-        <div className="flex flex-wrap items-center justify-between border-b border-rose-900/40 pb-4 gap-2">
-          <div>
-            <h1 className="text-2xl text-white font-medium" style={{ fontFamily: "'Playfair Display', serif" }}>
-              Yönetici Paneli & Fotoğraflar
-            </h1>
-            <p className="text-xs text-rose-200/70 mt-1">Toplam {photos.length} fotoğraf yüklendi.</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {photos.length > 0 && (
-              <>
-                <button onClick={toggleSelectAll} className="text-xs bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg transition text-rose-200 cursor-pointer">
-                  {selectedIndices.size === photos.length ? 'Seçimi Kaldır' : 'Tümünü Seç'}
-                </button>
-                {selectedIndices.size > 0 && (
-                  <button onClick={downloadSelected} disabled={isDownloading} className="text-xs bg-rose-600 hover:bg-rose-500 px-3 py-2 rounded-lg transition text-white shadow-md disabled:opacity-50 cursor-pointer">
-                    {isDownloading ? 'İndiriliyor...' : `Seçilenleri İndir (${selectedIndices.size})`}
-                  </button>
-                )}
-              </>
-            )}
-          </div>
+          <h1 className="text-2xl md:text-3xl text-white text-center font-medium" style={{ fontFamily: "'Playfair Display', serif" }}>
+            Sinem & Harun Canlı Albüm
+          </h1>
+          <span className="text-xs text-rose-300/80 font-light">Toplam: {photos.length} Fotoğraf</span>
         </div>
 
         {photos.length === 0 ? (
-          <div className="text-center py-20 space-y-3">
-            <p className="text-rose-200/60 text-sm">Henüz hiç fotoğraf yüklenmemiş.</p>
-            <Link href="/" className="inline-block text-xs bg-rose-600 text-white px-4 py-2 rounded-lg">Ana Sayfadan Fotoğraf Yükle</Link>
+          <div className="text-center py-20 space-y-4">
+            <p className="text-rose-200/60 text-sm">Henüz bu cihazda kayıtlı fotoğraf bulunmuyor.</p>
+            <Link href="/" className="inline-block bg-rose-600 text-white px-6 py-2.5 rounded-full text-sm font-medium">Ana Sayfadan Fotoğraf Yükle</Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-            {photos.map((url, i) => {
-              const isChecked = selectedIndices.has(i);
-              return (
-                <div key={i} className={`group relative aspect-square rounded-2xl overflow-hidden shadow-md border ${isChecked ? 'border-rose-500 ring-2 ring-rose-500' : 'border-transparent'}`} style={{ background: 'rgba(255, 255, 255, 0.05)' }}>
-                  <input type="checkbox" checked={isChecked} onChange={() => toggleSelectPhoto(i)} className="absolute top-2 left-2 z-20 w-5 h-5 accent-rose-600 cursor-pointer" />
-                  <img src={url} alt="Albüm Fotoğrafı" className="w-full h-full object-cover group-hover:scale-105 transition duration-500 cursor-pointer" onClick={() => setLightboxImg(url)} />
-                  <button onClick={() => deletePhoto(i)} className="absolute top-2 right-2 z-25 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded-full shadow-lg transition cursor-pointer" title="Sil">🗑️</button>
-                </div>
-              );
-            })}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {photos.map((url, i) => (
+              <div key={i} className="relative aspect-square rounded-2xl overflow-hidden shadow-xl bg-white/5 border border-white/10 group">
+                <img 
+                  src={url} 
+                  alt="Sinem & Harun Albüm Fotoğrafı" 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 cursor-pointer"
+                  onClick={() => setLightboxImg(url)}
+                />
+                <button 
+                  onClick={() => deletePhoto(i)}
+                  className="absolute top-2 right-2 bg-red-600/80 hover:bg-red-600 text-white text-xs px-2.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition shadow-lg cursor-pointer"
+                >
+                  🗑️ Sil
+                </button>
+              </div>
+            ))}
           </div>
         )}
-      </main>
+      </div>
 
-      <footer className="relative z-10 text-center text-xs text-rose-100/70 py-6 font-light space-y-1">
-        <div>Sevgiyle Paylaşın • Sinem & Harun ✨</div>
-        <div className="text-[11px] opacity-80">Created by <a href="https://instagram.com/ori.bilisim" target="_blank" className="font-semibold underline hover:text-white transition">ori.bilisim 🤍</a></div>
+      <footer className="text-center text-xs text-rose-100/50 pt-10 font-light">
+        Sinem & Harun • Canlı Fotoğraf Galerisi 🤍
       </footer>
 
-      {/* Lightbox Modal */}
       {lightboxImg && (
         <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4" onClick={() => setLightboxImg(null)}>
           <button className="absolute top-4 right-4 text-white/80 hover:text-white p-2 text-xl cursor-pointer">✕</button>
