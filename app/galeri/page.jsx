@@ -6,7 +6,6 @@ import Link from 'next/link';
 export default function GaleriSayfasi() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [photos, setPhotos] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [passwordInput, setPasswordInput] = useState('');
   const [errorMsg, setErrorMsg] = useState(false);
   const [lightboxImg, setLightboxImg] = useState(null);
@@ -17,39 +16,22 @@ export default function GaleriSayfasi() {
     const auth = sessionStorage.getItem('is_admin_logged');
     if (auth === 'true') {
       setIsAuthenticated(true);
-      fetchPhotosFromApi();
-    } else {
-      setLoading(false);
+      loadStoredPhotos();
     }
   }, []);
 
-  const fetchPhotosFromApi = async () => {
-    setLoading(true);
-    let allPhotos = [];
-
-    // 1. Önce localStorage'dan anlık yüklenenleri al
+  const loadStoredPhotos = () => {
     try {
       const stored = localStorage.getItem('sinem_harun_wedding_gallery');
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) allPhotos = [...parsed];
+        if (Array.isArray(parsed)) {
+          setPhotos(parsed);
+        }
       }
-    } catch (e) {}
-
-    // 2. Kendi güvenli API'mizden Cloudinary fotoğraflarını çek
-    try {
-      const res = await fetch('/api/fotos');
-      const data = await res.json();
-      if (data.success && data.photos) {
-        const cloudPhotos = data.photos.map(file => file.secure_url);
-        allPhotos = Array.from(new Set([...cloudPhotos, ...allPhotos]));
-      }
-    } catch (err) {
-      console.error("API'den fotoğraflar alınamadı:", err);
+    } catch (e) {
+      console.error("Fotoğraflar yüklenemedi:", e);
     }
-
-    setPhotos(allPhotos);
-    setLoading(false);
   };
 
   const handleLogin = (e) => {
@@ -57,10 +39,18 @@ export default function GaleriSayfasi() {
     if (passwordInput === ADMIN_PASS) {
       sessionStorage.setItem('is_admin_logged', 'true');
       setIsAuthenticated(true);
-      fetchPhotosFromApi();
+      loadStoredPhotos();
     } else {
       setErrorMsg(true);
       setPasswordInput('');
+    }
+  };
+
+  const deletePhoto = (indexToRemove) => {
+    if (confirm("Bu fotoğrafı silmek istediğinize emin misiniz?")) {
+      const updated = photos.filter((_, i) => i !== indexToRemove);
+      setPhotos(updated);
+      localStorage.setItem('sinem_harun_wedding_gallery', JSON.stringify(updated));
     }
   };
 
@@ -114,18 +104,12 @@ export default function GaleriSayfasi() {
           <h1 className="text-2xl md:text-3xl text-white text-center font-medium" style={{ fontFamily: "'Playfair Display', serif" }}>
             Sinem & Harun Canlı Albüm
           </h1>
-          <span className="text-xs text-rose-300/80 font-light">
-            {loading ? 'Yükleniyor...' : `Toplam: ${photos.length} Fotoğraf`}
-          </span>
+          <span className="text-xs text-rose-300/80 font-light">Toplam: {photos.length} Fotoğraf</span>
         </div>
 
-        {loading ? (
-          <div className="text-center py-20">
-            <p className="text-rose-200/60 text-sm">Fotoğraflar yükleniyor...</p>
-          </div>
-        ) : photos.length === 0 ? (
+        {photos.length === 0 ? (
           <div className="text-center py-20 space-y-4">
-            <p className="text-rose-200/60 text-sm">Henüz hiç fotoğraf yüklenmemiş.</p>
+            <p className="text-rose-200/60 text-sm">Henüz bu cihazda kayıtlı fotoğraf bulunmuyor.</p>
             <Link href="/" className="inline-block bg-rose-600 text-white px-6 py-2.5 rounded-full text-sm font-medium">Ana Sayfadan Fotoğraf Yükle</Link>
           </div>
         ) : (
@@ -137,10 +121,14 @@ export default function GaleriSayfasi() {
                   alt="Sinem & Harun Albüm Fotoğrafı" 
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 cursor-pointer"
                   onClick={() => setLightboxImg(url)}
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                  }}
                 />
+                <button 
+                  onClick={() => deletePhoto(i)}
+                  className="absolute top-2 right-2 bg-red-600/80 hover:bg-red-600 text-white text-xs px-2.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition shadow-lg cursor-pointer"
+                  title="Fotoğrafı Kaldır"
+                >
+                  🗑️ Sil
+                </button>
               </div>
             ))}
           </div>
