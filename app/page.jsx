@@ -29,6 +29,16 @@ export default function AnaSayfa() {
         maxFiles: 10
       }, (error, result) => {
         if (!error && result && result.event === "success") {
+          const newUrl = result.info.secure_url;
+          try {
+            const stored = localStorage.getItem('sinem_harun_wedding_gallery');
+            let photos = stored ? JSON.parse(stored) : [];
+            if (!photos.includes(newUrl)) {
+              photos.unshift(newUrl);
+              localStorage.setItem('sinem_harun_wedding_gallery', JSON.stringify(photos));
+            }
+          } catch (e) {}
+
           alert("Fotoğrafınız başarıyla gönderildi! Teşekkür ederiz. ✨");
         }
       }).open();
@@ -45,7 +55,6 @@ export default function AnaSayfa() {
           <span className="text-xs uppercase tracking-widest text-rose-200/70 font-light">Anı Albümü</span>
         </div>
         <div className="flex items-center gap-2">
-          {/* Bulut Galeriye Git Butonu - Doğrudan /galeri sayfasına yönlendirir */}
           <button 
             onClick={() => router.push('/galeri')} 
             className="p-2.5 text-rose-200/80 hover:text-white transition rounded-full hover:bg-white/10 flex items-center gap-1.5 text-xs bg-white/5 border border-white/10 cursor-pointer" 
