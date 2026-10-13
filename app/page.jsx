@@ -60,13 +60,19 @@ export default function AnaSayfa() {
 
   return (
     <div className="min-h-screen text-rose-50 flex flex-col justify-between relative overflow-x-hidden" style={{ background: 'linear-gradient(135deg, #1a050b 0%, #2b0914 50%, #150308 100%)' }}>
+      <div className="fixed -top-32 -left-32 w-96 h-96 bg-rose-900/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="fixed -bottom-32 -right-32 w-96 h-96 bg-amber-900/20 rounded-full blur-3xl pointer-events-none"></div>
+
       <header className="p-4 flex justify-between items-center relative z-20 container mx-auto max-w-4xl">
         <div className="flex items-center space-x-2">
           <span className="text-xs uppercase tracking-widest text-rose-200/70 font-light">Anı Albümü</span>
         </div>
+        <div className="flex items-center gap-2">
         <div>
           <button 
             onClick={() => setIsAdminModalOpen(true)} 
+            className="p-2.5 text-rose-200/80 hover:text-white transition rounded-full hover:bg-white/10 flex items-center gap-1.5 text-xs bg-white/5 border border-white/10 cursor-pointer" 
+            title="Bulut Galeriye Git / Yönetici Girişi"
             className="p-2.5 text-rose-200/80 hover:text-white transition rounded-full hover:bg-white/10 flex items-center gap-1.5 text-xs bg-white/5 border border-white/10 cursor-pointer"
           >
             <span>🔒</span>
@@ -86,6 +92,7 @@ export default function AnaSayfa() {
             Bu özel günümüzden çektiğiniz tüm güzel anıları ve fotoğrafları bizimle paylaşarak albümümüze katkıda bulunabilirsiniz. ✨
           </p>
           <div className="pt-4">
+            <button onClick={openUploadWidget} className="inline-flex items-center space-x-2 bg-gradient-to-r from-rose-600 to-rose-800 hover:from-rose-500 hover:to-rose-700 text-white px-8 py-4 rounded-full font-medium shadow-lg hover:shadow-rose-900/40 transition-all cursor-pointer text-base">
             <button onClick={openUploadWidget} className="inline-flex items-center space-x-2 bg-gradient-to-r from-rose-600 to-rose-800 hover:from-rose-500 hover:to-rose-700 text-white px-8 py-4 rounded-full font-medium shadow-lg transition-all cursor-pointer text-base">
               <span>📷 Fotoğraf Yükle</span>
             </button>
@@ -93,6 +100,9 @@ export default function AnaSayfa() {
         </div>
       </main>
 
+      <footer className="relative z-10 text-center text-xs text-rose-100/70 py-6 font-light space-y-1">
+        <div>Sevgiyle Paylaşın • Sinem & Harun ✨</div>
+        <div className="text-[11px] opacity-80">Created by <a href="https://instagram.com/ori.bilisim" target="_blank" className="font-semibold underline hover:text-white transition">ori.bilisim 🤍</a></div>
       <footer className="relative z-10 text-center text-xs text-rose-100/70 py-6 font-light">
         Sevgiyle Paylaşın • Sinem & Harun ✨
       </footer>
