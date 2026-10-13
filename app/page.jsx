@@ -24,7 +24,9 @@ export default function AnaSayfa() {
         uploadPreset: UPLOAD_PRESET,
         sources: ['local', 'camera'],
         multiple: true,
-        maxFiles: 10
+        maxFiles: 10,
+        maxFileSize: 25000000,
+        clientAllowedFormats: ["image"]
       }, (error, result) => {
         if (!error && result && result.event === "success") {
           const newUrl = result.info.secure_url;
@@ -42,7 +44,6 @@ export default function AnaSayfa() {
       }).open();
     }
   };
-
   return (
     <div className="min-h-screen text-rose-50 flex flex-col justify-between relative overflow-x-hidden" style={{ background: 'linear-gradient(135deg, #1a050b 0%, #2b0914 50%, #150308 100%)' }}>
       
