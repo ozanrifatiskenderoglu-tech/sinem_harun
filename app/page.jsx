@@ -1,16 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import Link from 'next/link';
 
 export default function AnaSayfa() {
-  const router = useRouter();
-  const [adminPassword, setAdminPassword] = useState('');
-  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
-
   const CLOUD_NAME = "qlxdd0ki";
   const UPLOAD_PRESET = "SINEM_HARUN";
-  const ADMIN_PASS = "171026";
 
   useEffect(() => {
     if (!document.getElementById('cloudinary-widget-script')) {
@@ -48,18 +43,6 @@ export default function AnaSayfa() {
     }
   };
 
-  const verifyAdmin = () => {
-    if (adminPassword === ADMIN_PASS) {
-      sessionStorage.setItem('is_admin_logged', 'true');
-      setAdminPassword('');
-      setIsAdminModalOpen(false);
-      router.push('/galeri');
-    } else {
-      alert("Hatalı şifre!");
-      setAdminPassword('');
-    }
-  };
-
   return (
     <div className="min-h-screen text-rose-50 flex flex-col justify-between relative overflow-x-hidden" style={{ background: 'linear-gradient(135deg, #1a050b 0%, #2b0914 50%, #150308 100%)' }}>
       
@@ -69,17 +52,17 @@ export default function AnaSayfa() {
           <span className="text-xs uppercase tracking-widest text-rose-200/70 font-light">Anı Albümü</span>
         </div>
         <div>
-          <button 
-            onClick={() => setIsAdminModalOpen(true)} 
-            className="p-2.5 text-rose-200/80 hover:text-white transition rounded-full hover:bg-white/10 flex items-center gap-1.5 text-xs bg-white/5 border border-white/10 cursor-pointer"
+          <Link 
+            href="/galeri" 
+            className="p-2.5 text-rose-200/80 hover:text-white transition rounded-full hover:bg-white/10 flex items-center gap-1.5 text-xs bg-white/5 border border-white/10"
           >
             <span>🔒</span>
             <span>Bulut Galeriye Git</span>
-          </button>
+          </Link>
         </div>
       </header>
 
-      {/* Ana İçerik - Herkese Açık Yükleme Ekranı */}
+      {/* Ana İçerik - Fotoğraf Yükleme Alanı */}
       <main className="container mx-auto max-w-4xl px-4 py-12 relative z-10 space-y-8 flex-grow flex flex-col items-center justify-center text-center">
         <div className="rounded-3xl p-8 md:p-12 space-y-6 shadow-2xl relative overflow-hidden w-full max-w-2xl" style={{ background: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
           <div className="space-y-2">
@@ -101,26 +84,6 @@ export default function AnaSayfa() {
       <footer className="relative z-10 text-center text-xs text-rose-100/70 py-6 font-light">
         Sevgiyle Paylaşın • Sinem & Harun ✨
       </footer>
-
-      {/* Şifre Giriş Modalı (Sadece sağ üstteki kilit butonuna basınca açılır) */}
-      {isAdminModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="rounded-2xl p-6 w-full max-w-xs space-y-4 shadow-2xl relative border border-white/20" style={{ background: 'rgba(20, 5, 10, 0.95)', backdropFilter: 'blur(16px)' }}>
-            <button onClick={() => setIsAdminModalOpen(false)} className="absolute top-4 right-4 text-rose-200/60 hover:text-white cursor-pointer">✕</button>
-            <h3 className="text-lg text-center text-white" style={{ fontFamily: "'Playfair Display', serif" }}>Yönetici Girişi</h3>
-            <input 
-              type="password" 
-              value={adminPassword} 
-              onChange={(e) => setAdminPassword(e.target.value)} 
-              onKeyDown={(e) => e.key === 'Enter' && verifyAdmin()}
-              placeholder="Şifre" 
-              className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-rose-200/40 focus:outline-none focus:border-rose-400 text-center text-sm" 
-              autoFocus
-            />
-            <button onClick={verifyAdmin} className="w-full bg-rose-600 hover:bg-rose-500 text-white font-medium py-2.5 rounded-xl transition text-sm cursor-pointer">Giriş Yap</button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
