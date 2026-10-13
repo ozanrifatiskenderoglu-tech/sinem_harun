@@ -1,66 +1,34 @@
-'use client';
-
-import { useState, useEffect } from 'react';
+import { v2 as cloudinary } from 'cloudinary';
+import Image from 'next/image';
 import Link from 'next/link';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
-export default function GaleriSayfasi() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [photos, setPhotos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [passwordInput, setPasswordInput] = useState('');
-  const [errorMsg, setErrorMsg] = useState(false);
-  const [lightboxImg, setLightboxImg] = useState(null);
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
-  const ADMIN_PASS = "171026";
+const ADMIN_PASS = "171026";
 
-  useEffect(() => {
-    const auth = sessionStorage.getItem('is_admin_logged');
-    if (auth === 'true') {
-      setIsAuthenticated(true);
-      loadPhotos();
-    } else {
-      setLoading(false);
+export default async function GaleriSayfasi({ searchParams }) {
+  const cookieStore = cookies();
+  const authCookie = cookieStore.get('admin_auth');
+
+  const params = await searchParams;
+  const password = params?.password;
+
+  // Şifre doğru girildiyse çerez set et ve sayfayı yenile
+  if (password) {
+    if (password === ADMIN_PASS) {
+      cookieStore.set('admin_auth', 'true', { httpOnly: true, path: '/' });
+      redirect('/galeri');
     }
-  }, []);
+  }
 
-  const loadPhotos = () => {
-    setLoading(true);
-    try {
-      const stored = localStorage.getItem('sinem_harun_wedding_gallery');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          setPhotos(parsed);
-        }
-      }
-    } catch (e) {
-      console.error("Fotoğraflar yüklenemedi:", e);
-    }
-    setLoading(false);
-  };
-
-  const handleLogin = (e) => {
-    e.preventDefault();
-    if (passwordInput === ADMIN_PASS) {
-      sessionStorage.setItem('is_admin_logged', 'true');
-      setIsAuthenticated(true);
-      loadPhotos();
-    } else {
-      setErrorMsg(true);
-      setPasswordInput('');
-    }
-  };
-
-  const deletePhoto = (indexToRemove) => {
-    if (confirm("Bu fotoğrafı silmek istediğinize emin misiniz?")) {
-      const updated = photos.filter((_, i) => i !== indexToRemove);
-      setPhotos(updated);
-      localStorage.setItem('sinem_harun_wedding_gallery', JSON.stringify(updated));
-    }
-  };
-
-  // Eğer giriş yapılmadıysa sadece şifre ekranını göster (Sunucu Digest hatası asla almaz)
-  if (!isAuthenticated) {
+  // Oturum açılmamışsa şifre ekranını göster
+  if (authCookie?.value !== 'true') {
     return (
       <div className="min-h-screen text-rose-50 flex flex-col items-center justify-center relative overflow-x-hidden p-4" style={{ background: 'linear-gradient(135deg, #1a050b 0%, #2b0914 50%, #150308 100%)' }}>
         <div className="rounded-2xl p-8 w-full max-w-sm space-y-6 shadow-2xl relative border border-white/20 text-center" style={{ background: 'rgba(20, 5, 10, 0.95)', backdropFilter: 'blur(16px)' }}>
@@ -70,11 +38,10 @@ export default function GaleriSayfasi() {
             <p className="text-xs text-rose-200/70">Bulut galeriyi görüntülemek için yönetici şifresini girmeniz gerekmektedir.</p>
           </div>
           
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form method="GET" action="/galeri" className="space-y-4">
             <input 
               type="password" 
-              value={passwordInput}
-              onChange={(e) => setPasswordInput(e.target.value)}
+              name="password"
               placeholder="Yönetici Şifresi" 
               className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-rose-200/40 focus:outline-none focus:border-rose-400 text-center text-sm" 
               autoFocus
@@ -85,8 +52,8 @@ export default function GaleriSayfasi() {
             </button>
           </form>
 
-          {errorMsg && (
-            <p className="text-xs text-red-400">Hatalй şifre! Lütfen tekrar deneyin.</p>
+          {password && password !== ADMIN_PASS && (
+            <p className="text-xs text-red-400">Hatalı şifre!</p>
           )}
 
           <div>
@@ -99,11 +66,26 @@ export default function GaleriSayfasi() {
     );
   }
 
-  // Giriş yapıldıysa şifreli galeri ekranını göster
+  // Fotoğrafları çeken çalışan orijinal blok
+  let fotograflar = [];
+  
+  try {
+    const result = await cloudinary.search
+      .expression('folder:SİNEM_HARUN/*')
+      .sort_by('created_at', 'desc')
+      .max_results(50)
+      .execute();
+
+    fotograflar = result.resources;
+  } catch (error) {
+    console.error("Cloudinary fotoğraf çekme hatası:", error);
+  }
+
   return (
     <div className="min-h-screen text-rose-50 flex flex-col justify-between p-6 md:p-12" style={{ background: 'linear-gradient(135deg, #1a050b 0%, #2b0914 50%, #150308 100%)' }}>
       <div className="max-w-6xl mx-auto w-full space-y-8 flex-grow">
         
+        {/* Üst Menü */}
         <div className="flex justify-between items-center border-b border-rose-900/40 pb-4">
           <Link href="/" className="text-xs bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl transition text-rose-200">
             ← Ana Sayfaya Dön
@@ -111,35 +93,26 @@ export default function GaleriSayfasi() {
           <h1 className="text-2xl md:text-3xl text-white text-center font-medium" style={{ fontFamily: "'Playfair Display', serif" }}>
             Sinem & Harun Canlı Albüm
           </h1>
-          <span className="text-xs text-rose-300/80 font-light">Toplam: {photos.length} Fotoğraf</span>
+          <span className="text-xs text-rose-300/80 font-light">Toplam: {fotograflar.length} Fotoğraf</span>
         </div>
 
-        {loading ? (
-          <div className="text-center py-20">
-            <p className="text-rose-200/60 text-sm">Yükleniyor...</p>
-          </div>
-        ) : photos.length === 0 ? (
+        {/* Fotoğraf Grid Alanı */}
+        {fotograflar.length === 0 ? (
           <div className="text-center py-20 space-y-4">
-            <p className="text-rose-200/60 text-sm">Henüz kayıtlı fotoğraf bulunmuyor.</p>
-            <Link href="/" className="inline-block bg-rose-600 text-white px-6 py-2.5 rounded-full text-sm font-medium">Ana Sayfadan Fotoğraf Yükle</Link>
+            <p className="text-rose-200/60 text-sm">Henüz Cloudinary klasöründe fotoğraf bulunmuyor.</p>
+            <Link href="/" className="inline-block bg-rose-600 text-white px-6 py-2.5 rounded-full text-sm font-medium">Ana Sayfaya Dön</Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {photos.map((url, i) => (
-              <div key={i} className="relative aspect-square rounded-2xl overflow-hidden shadow-xl bg-white/5 border border-white/10 group">
-                <img 
-                  src={url} 
-                  alt="Sinem & Harun Albüm Fotoğrafı" 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 cursor-pointer"
-                  onClick={() => setLightboxImg(url)}
+            {fotograflar.map((foto) => (
+              <div key={foto.public_id} className="relative aspect-square rounded-2xl overflow-hidden shadow-xl bg-white/5 border border-white/10 group">
+                <Image 
+                  src={foto.secure_url} 
+                  alt="Sinem & Harun Nişan Fotoğrafı" 
+                  fill 
+                  sizes="(max-width: 768px) 100vw, 25vw"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                <button 
-                  onClick={() => deletePhoto(i)}
-                  className="absolute top-2 right-2 bg-red-600/80 hover:bg-red-600 text-white text-xs px-2.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition shadow-lg cursor-pointer"
-                  title="Fotoğrafı Sil"
-                >
-                  🗑️ Sil
-                </button>
               </div>
             ))}
           </div>
@@ -149,13 +122,6 @@ export default function GaleriSayfasi() {
       <footer className="text-center text-xs text-rose-100/50 pt-10 font-light">
         Sinem & Harun • Canlı Fotoğraf Galerisi 🤍
       </footer>
-
-      {lightboxImg && (
-        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4" onClick={() => setLightboxImg(null)}>
-          <button className="absolute top-4 right-4 text-white/80 hover:text-white p-2 text-xl cursor-pointer">✕</button>
-          <img src={lightboxImg} alt="Büyük Boyut" className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl" onClick={(e) => e.stopPropagation()} />
-        </div>
-      )}
     </div>
   );
 }
