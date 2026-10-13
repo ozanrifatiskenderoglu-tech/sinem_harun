@@ -1,16 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function AnaSayfa() {
   const router = useRouter();
-  const [adminPassword, setAdminPassword] = useState('');
-  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
 
   const CLOUD_NAME = "qlxdd0ki";
   const UPLOAD_PRESET = "SINEM_HARUN";
-  const ADMIN_PASS = "171026";
 
   useEffect(() => {
     if (!document.getElementById('cloudinary-widget-script')) {
@@ -38,17 +35,6 @@ export default function AnaSayfa() {
     }
   };
 
-  const verifyAdmin = () => {
-    if (adminPassword === ADMIN_PASS) {
-      sessionStorage.setItem('is_admin_logged', 'true');
-      setAdminPassword('');
-      setIsAdminModalOpen(false);
-      router.push('/galeri');
-    } else {
-      alert("Hatalı şifre!");
-    }
-  };
-
   return (
     <div className="min-h-screen text-rose-50 flex flex-col justify-between relative overflow-x-hidden" style={{ background: 'linear-gradient(135deg, #1a050b 0%, #2b0914 50%, #150308 100%)' }}>
       <div className="fixed -top-32 -left-32 w-96 h-96 bg-rose-900/20 rounded-full blur-3xl pointer-events-none"></div>
@@ -60,11 +46,11 @@ export default function AnaSayfa() {
         </div>
         <div className="flex items-center gap-2">
           <button 
-            onClick={() => setIsAdminModalOpen(true)} 
+            onClick={() => router.push('/galeri')} 
             className="p-2.5 text-rose-200/80 hover:text-white transition rounded-full hover:bg-white/10 flex items-center gap-1.5 text-xs bg-white/5 border border-white/10 cursor-pointer" 
             title="Bulut Galeriye Git"
           >
-            <span>🔒</span>
+            <span>📷</span>
             <span>Bulut Galeriye Git</span>
           </button>
         </div>
@@ -92,25 +78,6 @@ export default function AnaSayfa() {
         <div>Sevgiyle Paylaşın • Sinem & Harun ✨</div>
         <div className="text-[11px] opacity-80">Created by <a href="https://instagram.com/ori.bilisim" target="_blank" className="font-semibold underline hover:text-white transition">ori.bilisim 🤍</a></div>
       </footer>
-
-      {isAdminModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="rounded-2xl p-6 w-full max-w-xs space-y-4 shadow-2xl relative border border-white/20" style={{ background: 'rgba(20, 5, 10, 0.95)', backdropFilter: 'blur(16px)' }}>
-            <button onClick={() => setIsAdminModalOpen(false)} className="absolute top-4 right-4 text-rose-200/60 hover:text-white">✕</button>
-            <h3 className="text-lg text-center text-white" style={{ fontFamily: "'Playfair Display', serif" }}>Yönetici Girişi</h3>
-            <input 
-              type="password" 
-              value={adminPassword} 
-              onChange={(e) => setAdminPassword(e.target.value)} 
-              onKeyDown={(e) => e.key === 'Enter' && verifyAdmin()}
-              placeholder="Şifre" 
-              className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-rose-200/40 focus:outline-none focus:border-rose-400 text-center text-sm" 
-              autoFocus
-            />
-            <button onClick={verifyAdmin} className="w-full bg-rose-600 hover:bg-rose-500 text-white font-medium py-2.5 rounded-xl transition text-sm cursor-pointer">Giriş Yap</button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
