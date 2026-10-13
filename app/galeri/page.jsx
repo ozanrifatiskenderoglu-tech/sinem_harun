@@ -1,6 +1,8 @@
 import { v2 as cloudinary } from 'cloudinary';
 import Image from 'next/image';
 import Link from 'next/link';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -8,9 +10,64 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export default async function GaleriSayfasi() {
+const ADMIN_PASS = "171026";
+
+export default async function GaleriSayfasi({ searchParams }) {
+  const cookieStore = cookies();
+  const authCookie = cookieStore.get('admin_auth');
+
+  // URL üzerinden şifre gönderildiyse doğrula ve çerez ata
+  const params = await searchParams;
+  const password = params?.password;
+
+  if (password) {
+    if (password === ADMIN_PASS) {
+      cookieStore.set('admin_auth', 'true', { httpOnly: true, path: '/' });
+      redirect('/galeri');
+    }
+  }
+
+  // Oturum açılmamışsa şifre giriş ekranını göster
+  if (authCookie?.value !== 'true') {
+    return (
+      <div className="min-h-screen text-rose-50 flex flex-col items-center justify-center relative overflow-x-hidden p-4" style={{ background: 'linear-gradient(135deg, #1a050b 0%, #2b0914 50%, #150308 100%)' }}>
+        <div className="rounded-2xl p-8 w-full max-w-sm space-y-6 shadow-2xl relative border border-white/20 text-center" style={{ background: 'rgba(20, 5, 10, 0.95)', backdropFilter: 'blur(16px)' }}>
+          <div className="space-y-2">
+            <span className="text-2xl">🔒</span>
+            <h1 className="text-xl text-white font-medium" style={{ fontFamily: "'Playfair Display', serif" }}>Yetkili Girişi Gerekli</h1>
+            <p className="text-xs text-rose-200/70">Bulut galeriyi görüntülemek için yönetici şifresini girmeniz gerekmektedir.</p>
+          </div>
+          
+          <form method="GET" action="/galeri" className="space-y-4">
+            <input 
+              type="password" 
+              name="password"
+              placeholder="Yönetici Şifresi" 
+              className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-rose-200/40 focus:outline-none focus:border-rose-400 text-center text-sm" 
+              autoFocus
+              required
+            />
+            <button type="submit" className="w-full bg-rose-600 hover:bg-rose-500 text-white font-medium py-3 rounded-xl transition text-sm cursor-pointer shadow-lg">
+              Giriş Yap
+            </button>
+          </form>
+
+          {password && password !== ADMIN_PASS && (
+            <p className="text-xs text-red-400">Hatalı şifre!</p>
+          )}
+
+          <div>
+            <Link href="/" className="text-xs text-rose-300/70 hover:text-white underline transition">
+              ← Ana Sayfaya Dön
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Şifre doğruysa Cloudinary'den fotoğrafları çek
   let fotograflar = [];
-  
   try {
     const result = await cloudinary.search
       .expression('folder:SİNEM_HARUN/*')
