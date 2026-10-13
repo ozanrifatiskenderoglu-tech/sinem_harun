@@ -32,18 +32,6 @@ export default function AnaSayfa() {
         maxFiles: 10
       }, (error, result) => {
         if (!error && result && result.event === "success") {
-          const newUrl = result.info.secure_url;
-          try {
-            const stored = localStorage.getItem('sinem_harun_wedding_gallery');
-            let photos = stored ? JSON.parse(stored) : [];
-            if (!photos.includes(newUrl)) {
-              photos.unshift(newUrl);
-              localStorage.setItem('sinem_harun_wedding_gallery', JSON.stringify(photos));
-            }
-          } catch (e) {
-            console.error("Kayıt hatası:", e);
-          }
-
           alert("Fotoğrafınız başarıyla gönderildi! Teşekkür ederiz. ✨");
         }
       }).open();
