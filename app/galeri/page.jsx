@@ -12,7 +12,6 @@ cloudinary.config({
 
 const ADMIN_PASS = "171026";
 
-// Şifre kontrolünü güvenli yapan Server Action (Digest hatasını önler)
 async function loginAction(formData) {
   'use server';
   const password = formData.get('password');
@@ -29,7 +28,7 @@ export default async function GaleriSayfasi() {
   const cookieStore = cookies();
   const authCookie = cookieStore.get('admin_auth');
 
-  // 1. Şifre girilmediyse şifre giriş ekranını göster
+  // Şifre girilmemişse veya oturum doğrulanmadıysa kesinlikle şifre ekranını göster
   if (authCookie?.value !== 'true') {
     return (
       <div className="min-h-screen text-rose-50 flex flex-col items-center justify-center relative overflow-x-hidden p-4" style={{ background: 'linear-gradient(135deg, #1a050b 0%, #2b0914 50%, #150308 100%)' }}>
@@ -64,7 +63,7 @@ export default async function GaleriSayfasi() {
     );
   }
 
-  // 2. Şifre doğruysa .env ve Cloudinary SDK ile fotoğrafları çek
+  // Şifre doğruysa fotoğrafları çek ve göster
   let fotograflar = [];
   
   try {
@@ -83,7 +82,6 @@ export default async function GaleriSayfasi() {
     <div className="min-h-screen text-rose-50 flex flex-col justify-between p-6 md:p-12" style={{ background: 'linear-gradient(135deg, #1a050b 0%, #2b0914 50%, #150308 100%)' }}>
       <div className="max-w-6xl mx-auto w-full space-y-8 flex-grow">
         
-        {/* Üst Menü */}
         <div className="flex justify-between items-center border-b border-rose-900/40 pb-4">
           <Link href="/" className="text-xs bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl transition text-rose-200">
             ← Ana Sayfaya Dön
@@ -94,7 +92,6 @@ export default async function GaleriSayfasi() {
           <span className="text-xs text-rose-300/80 font-light">Toplam: {fotograflar.length} Fotoğraf</span>
         </div>
 
-        {/* Fotoğraf Grid Alanı */}
         {fotograflar.length === 0 ? (
           <div className="text-center py-20 space-y-4">
             <p className="text-rose-200/60 text-sm">Henüz Cloudinary klasöründe fotoğraf bulunmuyor.</p>
