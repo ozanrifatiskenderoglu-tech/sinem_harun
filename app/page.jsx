@@ -1,15 +1,19 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function AnaSayfa() {
   const router = useRouter();
+  const [adminPassword, setAdminPassword] = useState('');
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
 
   const CLOUD_NAME = "qlxdd0ki";
   const UPLOAD_PRESET = "SINEM_HARUN";
+  const ADMIN_PASS = "171026";
 
   useEffect(() => {
+    // Cloudinary widget script yüklemesi
     if (!document.getElementById('cloudinary-widget-script')) {
       const script = document.createElement('script');
       script.id = 'cloudinary-widget-script';
@@ -29,9 +33,32 @@ export default function AnaSayfa() {
         maxFiles: 10
       }, (error, result) => {
         if (!error && result && result.event === "success") {
+          const newUrl = result.info.secure_url;
+          
+          // LocalStorage'a da kaydedelim ki galeri sayfasında anında görünsün
+          try {
+            const stored = localStorage.getItem('sinem_harun_wedding_gallery');
+            let photos = stored ? JSON.parse(stored) : [];
+            if (!photos.includes(newUrl)) {
+              photos.unshift(newUrl);
+              localStorage.setItem('sinem_harun_wedding_gallery', JSON.stringify(photos));
+            }
+          } catch (e) {}
+
           alert("Fotoğrafınız başarıyla gönderildi! Teşekkür ederiz. ✨");
         }
       }).open();
+    }
+  };
+
+  const verifyAdmin = () => {
+    if (adminPassword === ADMIN_PASS) {
+      setAdminPassword('');
+      setIsAdminModalOpen(false);
+      // Şifre doğruysa doğrudan galeri sayfasına yönlendir
+      router.push('/galeri');
+    } else {
+      alert("Hatalı şifre!");
     }
   };
 
@@ -45,12 +72,13 @@ export default function AnaSayfa() {
           <span className="text-xs uppercase tracking-widest text-rose-200/70 font-light">Anı Albümü</span>
         </div>
         <div className="flex items-center gap-2">
+          {/* Kilit Butonu - Tıklayınca Şifre Sorar, Bilinirse Galeriye Atar */}
           <button 
-            onClick={() => router.push('/galeri')} 
+            onClick={() => setIsAdminModalOpen(true)} 
             className="p-2.5 text-rose-200/80 hover:text-white transition rounded-full hover:bg-white/10 flex items-center gap-1.5 text-xs bg-white/5 border border-white/10 cursor-pointer" 
-            title="Bulut Galeriye Git"
+            title="Bulut Galeriye Git / Yönetici Girişi"
           >
-            <span>📷</span>
+            <span>🔒</span>
             <span>Bulut Galeriye Git</span>
           </button>
         </div>
@@ -78,6 +106,25 @@ export default function AnaSayfa() {
         <div>Sevgiyle Paylaşın • Sinem & Harun ✨</div>
         <div className="text-[11px] opacity-80">Created by <a href="https://instagram.com/ori.bilisim" target="_blank" className="font-semibold underline hover:text-white transition">ori.bilisim 🤍</a></div>
       </footer>
+
+      {/* Şifre Giriş Modalı */}
+      {isAdminModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="rounded-2xl p-6 w-full max-w-xs space-y-4 shadow-2xl relative border border-white/20" style={{ background: 'rgba(20, 5, 10, 0.95)', backdropFilter: 'blur(16px)' }}>
+            <button onClick={() => setIsAdminModalOpen(false)} className="absolute top-4 right-4 text-rose-200/60 hover:text-white">✕</button>
+            <h3 className="text-lg text-center text-white" style={{ fontFamily: "'Playfair Display', serif" }}>Yönetici Girişi</h3>
+            <input 
+              type="password" 
+              value={adminPassword} 
+              onChange={(e) => setAdminPassword(e.target.value)} 
+              onKeyDown={(e) => e.key === 'Enter' && verifyAdmin()}
+              placeholder="Şifre" 
+              className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-rose-200/40 focus:outline-none focus:border-rose-400 text-center text-sm" 
+              autoFocus
+            />
+            <button onClick={verifyAdmin} className="w-full bg-rose-600 hover:bg-rose-500 text-white font-medium py-2.5 rounded-xl transition text-sm cursor-pointer">Giriş Yap</button>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
